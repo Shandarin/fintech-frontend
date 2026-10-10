@@ -2,7 +2,7 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import type { Asset, Regime } from '../types';
 import { correlation, number, REGIMES, returns, sampleRegime, sliceDates } from '../lib/analytics';
 import { Empty } from './ui';
-export const CHART_COLORS = ['#287463', '#476f91', '#a67b2d', '#85628e', '#b96036', '#447d85'];
+export const CHART_COLORS = ['#13805c', '#3574bb', '#bb8b1c', '#8967b5', '#c46540', '#238f9b'];
 export function Sparkline({ values, positive = true, color, height = 35 }: { values: number[]; positive?: boolean; color?: string; height?: number }) { const min = Math.min(...values), max = Math.max(...values); const points = values.map((v, i) => `${i / Math.max(1, values.length - 1) * 100},${height - 4 - (v - min) / (max - min || 1) * (height - 8)}`).join(' '); return <svg className="sparkline" viewBox={`0 0 100 ${height}`} height={height} aria-hidden="true"><polyline points={points} stroke={color || (positive ? 'var(--positive)' : 'var(--negative)')} fill="none" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round"/></svg>; }
 export interface ChartSeries { name: string; values: number[]; color?: string; }
 export function TimeChart({ labels, series, height = 248, unit = '%', area = true, zero = false, compact = false }: { labels: string[]; series: ChartSeries[]; height?: number; unit?: string; area?: boolean; zero?: boolean; compact?: boolean }) {
@@ -15,7 +15,7 @@ export function TimeChart({ labels, series, height = 248, unit = '%', area = tru
   const lines = series.map((s, k) => ({ ...s, color: s.color || CHART_COLORS[k % CHART_COLORS.length], path: s.values.map((v, i) => `${i === 0 ? 'M' : 'L'}${x(i).toFixed(2)} ${y(v).toFixed(2)}`).join(' ') }));
   const pointer = (e: React.PointerEvent<SVGSVGElement>) => { const rect = e.currentTarget.getBoundingClientRect(); setHover(Math.max(0, Math.min(labels.length - 1, Math.round(((e.clientX - rect.left) / rect.width * width - left) / w * (labels.length - 1))))); };
   return <div ref={outer} className="time-chart" style={{ height }}><svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={`${series.map(s => s.name).join('、')}时间序列图；左右方向键查看数据`} tabIndex={0} onKeyDown={e => { if (['ArrowLeft', 'ArrowRight'].includes(e.key)) { e.preventDefault(); setHover(i => Math.max(0, Math.min(labels.length - 1, (i ?? 0) + (e.key === 'ArrowRight' ? 1 : -1)))); } }} onPointerMove={pointer} onPointerLeave={() => setHover(null)}>
-    <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={lines[0]?.color} stopOpacity="0.15"/><stop offset="100%" stopColor={lines[0]?.color} stopOpacity="0"/></linearGradient></defs>
+    <defs><linearGradient id={gid} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={lines[0]?.color} stopOpacity="0.08"/><stop offset="100%" stopColor={lines[0]?.color} stopOpacity="0"/></linearGradient></defs>
     {Array.from({ length: 5 }, (_, i) => { const v = min + (max - min) * i / 4; return <g key={i}><line x1={left} y1={y(v)} x2={width - right} y2={y(v)} stroke="var(--grid)" strokeDasharray="3 4"/><text x={left - 9} y={y(v) + 4} textAnchor="end" className="axis-label">{number(v, Math.abs(v) > 100 ? 0 : 1)}{unit === '%' ? '%' : ''}</text></g>; })}
     {area && lines[0] && <path d={`${lines[0].path} L${x(labels.length - 1)} ${top + h} L${left} ${top + h} Z`} fill={`url(#${gid})`}/>}
     {lines.map(s => <path key={s.name} d={s.path} fill="none" stroke={s.color} strokeWidth="2.2" strokeLinejoin="round" strokeLinecap="round"/>)}

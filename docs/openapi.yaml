@@ -1,0 +1,515 @@
+openapi: 3.0.3
+info:
+  title: RegimeLab Frontend Mock Contract
+  version: 1.0.0
+  description: 用于前后端对齐的草案。当前由浏览器内函数模拟，不存在真实HTTP服务。线上认证、用户管理、历史查询与写入接口仍需后端协商扩展。
+servers:
+- url: /
+  description: 示意地址；当前不是可调用的后端
+paths:
+  /api/assets:
+    get:
+      summary: 查询当前用户可见资产
+      operationId: assetsList
+      parameters:
+      - name: category
+        in: query
+        required: false
+        schema:
+          type: string
+          enum:
+          - equity
+          - bond
+          - commodity
+          - fx
+      responses:
+        '200':
+          description: 本地模拟数据
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - requestId
+                - mock
+                - data
+                properties:
+                  requestId:
+                    type: string
+                  mock:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Asset'
+        '400': &id001
+          description: 参数无效 / 不支持的模拟查询
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401': &id002
+          description: 未登录演示身份
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403': &id003
+          description: 当前演示身份不可访问
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404': &id004
+          description: 模拟器未定义接口
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '429': &id005
+          description: 达到本地每分钟调用限制
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /api/features:
+    get:
+      summary: 查询最新特征
+      operationId: featuresList
+      parameters:
+      - name: assetId
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 可选资产ID；无权限时返回403
+      responses:
+        '200':
+          description: 本地模拟数据
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - requestId
+                - mock
+                - data
+                properties:
+                  requestId:
+                    type: string
+                  mock:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        assetId:
+                          type: string
+                        snapshotDate:
+                          type: string
+                          format: date
+                        metrics:
+                          $ref: '#/components/schemas/Metrics'
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '429': *id005
+  /api/states:
+    get:
+      summary: 查询最新演示状态
+      operationId: statesList
+      parameters:
+      - name: assetId
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 可选资产ID；无权限时返回403
+      responses:
+        '200':
+          description: 本地模拟数据
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - requestId
+                - mock
+                - data
+                properties:
+                  requestId:
+                    type: string
+                  mock:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RegimeState'
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '429': *id005
+  /api/alerts:
+    get:
+      summary: 查询当前用户可见预警
+      operationId: alertsList
+      parameters:
+      - name: assetId
+        in: query
+        required: false
+        schema:
+          type: string
+        description: 可选资产ID；无权限时返回403
+      responses:
+        '200':
+          description: 本地模拟数据
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - requestId
+                - mock
+                - data
+                properties:
+                  requestId:
+                    type: string
+                  mock:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Alert'
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '429': *id005
+  /api/rules:
+    get:
+      summary: 查询当前用户可见规则
+      operationId: rulesList
+      parameters: []
+      responses:
+        '200':
+          description: 本地模拟数据
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - requestId
+                - mock
+                - data
+                properties:
+                  requestId:
+                    type: string
+                  mock:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                      - $ref: '#/components/schemas/RuleInput'
+                      - type: object
+                        properties:
+                          id:
+                            type: string
+                          createdAt:
+                            type: string
+                            format: date-time
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '429': *id005
+    post:
+      summary: 新建预警规则（分析师/管理员）
+      operationId: ruleCreate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RuleInput'
+      responses:
+        '201':
+          description: 规则写入当前模拟工作区
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - requestId
+                - mock
+                - data
+                properties:
+                  requestId:
+                    type: string
+                  mock:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/RuleInput'
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '429': *id005
+  /graphql:
+    post:
+      summary: 只支持预设WorkspaceSnapshot查询
+      operationId: workspaceSnapshot
+      description: 当前前端模拟器不是通用GraphQL解析器；不支持查询形状任意变化。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - query
+              properties:
+                query:
+                  type: string
+      responses:
+        '200':
+          description: 工作台聚合结果
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                - requestId
+                - mock
+                - data
+                properties:
+                  requestId:
+                    type: string
+                  mock:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      workspace:
+                        type: object
+                        properties:
+                          assets:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Asset'
+                          states:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/RegimeState'
+                          unreadAlertCount:
+                            type: integer
+        '400': *id001
+        '401': *id002
+        '403': *id003
+        '404': *id004
+        '429': *id005
+components:
+  schemas:
+    Error:
+      type: object
+      required:
+      - requestId
+      - mock
+      - error
+      properties:
+        requestId:
+          type: string
+        mock:
+          type: boolean
+          example: true
+        error:
+          type: object
+          required:
+          - code
+          - message
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+    Asset:
+      type: object
+      required:
+      - id
+      - name
+      - symbol
+      - category
+      properties:
+        id:
+          type: string
+          example: csi300
+        name:
+          type: string
+        symbol:
+          type: string
+        category:
+          type: string
+          enum:
+          - equity
+          - bond
+          - commodity
+          - fx
+        latest:
+          type: object
+          properties:
+            date:
+              type: string
+              format: date
+            close:
+              type: number
+            volume:
+              type: number
+    Metrics:
+      type: object
+      properties:
+        return1d:
+          type: number
+          description: 百分点 / 百分数，非0–1小数
+        volatility20:
+          type: number
+          description: 百分点 / 百分数，非0–1小数
+        momentum20:
+          type: number
+          description: 百分点 / 百分数，非0–1小数
+        drawdown:
+          type: number
+          description: 百分点 / 百分数，非0–1小数
+        confidence:
+          type: number
+          description: 百分点 / 百分数，非0–1小数
+    RuleInput:
+      type: object
+      required:
+      - name
+      - assetId
+      - metric
+      - operator
+      - threshold
+      - severity
+      - cooldown
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 48
+        assetId:
+          type: string
+          description: 可访问资产ID或all
+        metric:
+          type: string
+          enum:
+          - return1d
+          - volatility20
+          - momentum20
+          - drawdown
+          - confidence
+        operator:
+          type: string
+          enum:
+          - gt
+          - lt
+        threshold:
+          type: number
+        severity:
+          type: string
+          enum:
+          - high
+          - medium
+          - low
+        cooldown:
+          type: integer
+          minimum: 1
+          maximum: 1440
+          description: 分钟
+        enabled:
+          type: boolean
+          default: true
+    RegimeState:
+      type: object
+      properties:
+        assetId:
+          type: string
+        regime:
+          type: string
+          enum:
+          - bull
+          - range
+          - bear
+        confidence:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: 未校准的本地演示分数
+        probabilities:
+          type: object
+          properties:
+            bull:
+              type: number
+            range:
+              type: number
+            bear:
+              type: number
+        engine:
+          type: string
+          example: frontend-demo-heuristic
+        modelMetadata:
+          type: string
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+        ruleId:
+          type: string
+        assetId:
+          type: string
+        title:
+          type: string
+        severity:
+          type: string
+          enum:
+          - high
+          - medium
+          - low
+        status:
+          type: string
+          enum:
+          - new
+          - acknowledged
+          - resolved
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        metric:
+          type: string
+        value:
+          type: number
+        threshold:
+          type: number
+        operator:
+          type: string
+        snapshotDate:
+          type: string
+          format: date
+        note:
+          type: string
+        owner:
+          type: string

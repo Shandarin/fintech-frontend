@@ -1,0 +1,107 @@
+[
+  {
+    "name": "page: overview",
+    "result": "PASS"
+  },
+  {
+    "name": "page: data",
+    "result": "PASS"
+  },
+  {
+    "name": "page: features",
+    "result": "PASS"
+  },
+  {
+    "name": "page: regimes",
+    "result": "PASS"
+  },
+  {
+    "name": "page: alerts",
+    "result": "PASS"
+  },
+  {
+    "name": "page: quality",
+    "result": "PASS"
+  },
+  {
+    "name": "page: lineage",
+    "result": "PASS"
+  },
+  {
+    "name": "page: system",
+    "result": "PASS"
+  },
+  {
+    "name": "page: api",
+    "result": "PASS"
+  },
+  {
+    "name": "page: settings",
+    "result": "PASS"
+  },
+  {
+    "name": "all secondary tabs render",
+    "result": "PASS"
+  },
+  {
+    "name": "create rule, trigger alerts, cooldown deduplication",
+    "result": "PASS"
+  },
+  {
+    "name": "alert resolution and note",
+    "result": "PASS"
+  },
+  {
+    "name": "computed synthetic backtest",
+    "result": "PASS"
+  },
+  {
+    "name": "feature definition CRUD create",
+    "result": "PASS"
+  },
+  {
+    "name": "PCA and covariance visualizations",
+    "result": "PASS"
+  },
+  {
+    "name": "historical replay and heatmap detail",
+    "result": "PASS"
+  },
+  {
+    "name": "REST 200 / 404 and GraphQL query",
+    "result": "PASS"
+  },
+  {
+    "name": "viewer UI and asset access restrictions",
+    "result": "PASS"
+  },
+  {
+    "name": "administrator CSV parse and local import",
+    "result": "PASS"
+  },
+  {
+    "name": "simulated savepoint record workflow",
+    "result": "PASS"
+  },
+  {
+    "name": "preferences applied and serialized",
+    "result": "PASS"
+  },
+  {
+    "name": "custom dashboard hide and restore",
+    "result": "PASS"
+  },
+  {
+    "name": "logout and demo login",
+    "result": "PASS"
+  },
+  {
+    "name": "mobile 390px layout and navigation",
+    "result": "PASS"
+  },
+  {
+    "name": "no browser runtime errors",
+    "result": "PASS",
+    "errors": []
+  }
+]

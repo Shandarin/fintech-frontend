@@ -1,0 +1,10 @@
+# Example ONLY: merge the frontend service into the independent backend repository.
+# Replace the image with a published, tested frontend release or immutable digest.
+# The backend repository owns gateway + microservices + data infrastructure.
+services:
+  frontend:
+    image: ghcr.io/your-org/regimelab-frontend:1.0.0
+    ports:
+      - "3000:80"
+    # Integration requires a real adapter, production auth, and a proxy config.
+    # Simply adding depends_on does not wire the UI to backend services.

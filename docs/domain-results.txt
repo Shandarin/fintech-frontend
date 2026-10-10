@@ -1,0 +1,148 @@
+TAP version 13
+# Subtest: mean and sample standard deviation
+ok 1 - mean and sample standard deviation
+  ---
+  duration_ms: 1.721083
+  type: 'test'
+  ...
+# Subtest: simple returns and normalization
+ok 2 - simple returns and normalization
+  ---
+  duration_ms: 0.368957
+  type: 'test'
+  ...
+# Subtest: positive maximum drawdown
+ok 3 - positive maximum drawdown
+  ---
+  duration_ms: 0.281518
+  type: 'test'
+  ...
+# Subtest: correlation sign, bounds and constant series
+ok 4 - correlation sign, bounds and constant series
+  ---
+  duration_ms: 0.147569
+  type: 'test'
+  ...
+# Subtest: metrics use latest known observations
+ok 5 - metrics use latest known observations
+  ---
+  duration_ms: 0.497498
+  type: 'test'
+  ...
+# Subtest: regime probabilities sum to 100
+ok 6 - regime probabilities sum to 100
+  ---
+  duration_ms: 0.165195
+  type: 'test'
+  ...
+# Subtest: rules enforce enablement, ownership and thresholds
+ok 7 - rules enforce enablement, ownership and thresholds
+  ---
+  duration_ms: 1.666513
+  type: 'test'
+  ...
+# Subtest: as-of evaluation never consumes a future price
+ok 8 - as-of evaluation never consumes a future price
+  ---
+  duration_ms: 0.73466
+  type: 'test'
+  ...
+# Subtest: validation rejects empty names and nonfinite thresholds
+ok 9 - validation rejects empty names and nonfinite thresholds
+  ---
+  duration_ms: 0.354817
+  type: 'test'
+  ...
+# Subtest: local permission matrix
+ok 10 - local permission matrix
+  ---
+  duration_ms: 0.496827
+  type: 'test'
+  ...
+# Subtest: CSV escaped quotes, commas and embedded newline
+ok 11 - CSV escaped quotes, commas and embedded newline
+  ---
+  duration_ms: 0.863921
+  type: 'test'
+  ...
+# Subtest: CSV malformed input rejected
+ok 12 - CSV malformed input rejected
+  ---
+  duration_ms: 0.631326
+  type: 'test'
+  ...
+# Subtest: CSV formula injection neutralized
+ok 13 - CSV formula injection neutralized
+  ---
+  duration_ms: 0.181088
+  type: 'test'
+  ...
+# Subtest: deterministic fixture has 12 assets and 260 ordered weekdays
+ok 14 - deterministic fixture has 12 assets and 260 ordered weekdays
+  ---
+  duration_ms: 0.240336
+  type: 'test'
+  ...
+# Subtest: date range is inclusive and UTC calendar arithmetic stable
+ok 15 - date range is inclusive and UTC calendar arithmetic stable
+  ---
+  duration_ms: 0.139166
+  type: 'test'
+  ...
+# Subtest: PCA variance and projection are actually computed
+ok 16 - PCA variance and projection are actually computed
+  ---
+  duration_ms: 1.059162
+  type: 'test'
+  ...
+# Subtest: PCA empty and constant data remain finite
+ok 17 - PCA empty and constant data remain finite
+  ---
+  duration_ms: 0.348206
+  type: 'test'
+  ...
+# Subtest: mock API authentication and path boundary
+ok 18 - mock API authentication and path boundary
+  ---
+  duration_ms: 1.851517
+  type: 'test'
+  ...
+# Subtest: mock API filters unauthorized data
+ok 19 - mock API filters unauthorized data
+  ---
+  duration_ms: 0.637235
+  type: 'test'
+  ...
+# Subtest: mock API rejects invalid rule, viewer write, undefined endpoint
+ok 20 - mock API rejects invalid rule, viewer write, undefined endpoint
+  ---
+  duration_ms: 0.528134
+  type: 'test'
+  ...
+# Subtest: mock API creates an actual persistent-state rule
+ok 21 - mock API creates an actual persistent-state rule
+  ---
+  duration_ms: 0.691056
+  type: 'test'
+  ...
+# Subtest: GraphQL fixed query works and arbitrary query fails explicitly
+ok 22 - GraphQL fixed query works and arbitrary query fails explicitly
+  ---
+  duration_ms: 0.856431
+  type: 'test'
+  ...
+# Subtest: rate limiter actually returns 429 and expires the window
+ok 23 - rate limiter actually returns 429 and expires the window
+  ---
+  duration_ms: 0.383209
+  type: 'test'
+  ...
+1..23
+# tests 23
+# suites 0
+# pass 23
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 76.034423

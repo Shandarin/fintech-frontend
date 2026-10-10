@@ -1,0 +1,9 @@
+# Frontend-only demonstration. This does NOT start competition backend services.
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.preview
+    ports:
+      - "3000:80"
+    restart: unless-stopped

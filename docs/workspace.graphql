@@ -1,0 +1,6 @@
+# Proposed subset for the current mock. A real GraphQL service remains to be built.
+enum Regime { bull range bear }
+type AssetSummary { id: ID!, name: String!, symbol: String! }
+type StateSummary { assetId: ID!, regime: Regime!, confidence: Float! }
+type WorkspaceSnapshot { assets: [AssetSummary!]!, states: [StateSummary!]!, unreadAlertCount: Int! }
+type Query { workspace: WorkspaceSnapshot! }

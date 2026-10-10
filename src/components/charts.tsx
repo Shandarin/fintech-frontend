@@ -2,7 +2,7 @@ import React, { useEffect, useId, useRef, useState } from 'react';
 import type { Asset, Regime } from '../types';
 import { correlation, number, REGIMES, returns, sampleRegime, sliceDates } from '../lib/analytics';
 import { Empty } from './ui';
-export const CHART_COLORS = ['#16887c', '#7d94b8', '#c3a761', '#9b83b5', '#df8d75', '#668f9f'];
+export const CHART_COLORS = ['#287463', '#476f91', '#a67b2d', '#85628e', '#b96036', '#447d85'];
 export function Sparkline({ values, positive = true, color, height = 35 }: { values: number[]; positive?: boolean; color?: string; height?: number }) { const min = Math.min(...values), max = Math.max(...values); const points = values.map((v, i) => `${i / Math.max(1, values.length - 1) * 100},${height - 4 - (v - min) / (max - min || 1) * (height - 8)}`).join(' '); return <svg className="sparkline" viewBox={`0 0 100 ${height}`} height={height} aria-hidden="true"><polyline points={points} stroke={color || (positive ? 'var(--positive)' : 'var(--negative)')} fill="none" strokeWidth="1.7" strokeLinejoin="round" strokeLinecap="round"/></svg>; }
 export interface ChartSeries { name: string; values: number[]; color?: string; }
 export function TimeChart({ labels, series, height = 248, unit = '%', area = true, zero = false, compact = false }: { labels: string[]; series: ChartSeries[]; height?: number; unit?: string; area?: boolean; zero?: boolean; compact?: boolean }) {

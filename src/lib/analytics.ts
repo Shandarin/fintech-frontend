@@ -2,9 +2,9 @@ import type { Asset, AssetClass, Metric, PricePoint, Regime, Rule, User } from '
 export const CLASS_LABELS: Record<AssetClass, string> = { equity: '股票', bond: '债券', commodity: '商品', fx: '汇率' };
 export const ROLE_LABELS = { admin: '管理员', analyst: '分析师', viewer: '观察员' };
 export const REGIMES: Record<Regime, { label: string; color: string; description: string }> = {
-  bull: { label: '温和上行', color: '#198c7e', description: '动量改善，资产表现偏强' },
-  range: { label: '区间震荡', color: '#cfac55', description: '方向不明，关注结构分化' },
-  bear: { label: '承压下行', color: '#cc7480', description: '波动放大，风险偏好走弱' },
+  bull: { label: '温和上行', color: '#287463', description: '动量改善，资产表现偏强' },
+  range: { label: '区间震荡', color: '#a67b2d', description: '方向不明，关注结构分化' },
+  bear: { label: '承压下行', color: '#b54d51', description: '波动放大，风险偏好走弱' },
 };
 export const METRICS: Record<Metric, { label: string; unit: string; description: string }> = {
   return1d: { label: '单日收益率', unit: '%', description: '当前收盘价相对前一日的变化率' },

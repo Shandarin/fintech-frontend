@@ -11,7 +11,7 @@ export const NAV: { route: Route; name: string; icon: string; group: string }[] 
   { route: 'regimes', name: '市场状态', icon: 'activity', group: '研究工作台' },
   { route: 'alerts', name: '预警中心', icon: 'bell', group: '研究工作台' },
   { route: 'quality', name: '数据质量', icon: 'shield', group: '数据治理' },
-  { route: 'lineage', name: '数据血缘', icon: 'branch', group: '数据治理' },
+  { route: 'lineage', name: '数据溯源', icon: 'branch', group: '数据治理' },
   { route: 'system', name: '服务监控', icon: 'server', group: '平台管理' },
   { route: 'api', name: 'API 工作台', icon: 'code', group: '平台管理' },
   { route: 'settings', name: '团队与设置', icon: 'settings', group: '平台管理' },

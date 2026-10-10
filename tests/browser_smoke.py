@@ -26,7 +26,7 @@ with sync_playwright() as p:
     def tab(name):page.get_by_role('tab',name=re.compile(name)).click()
     def role(label):
         page.get_by_role('button',name='用户菜单').click();page.locator('.user-popover').get_by_role('button',name=label,exact=True).click();page.wait_for_timeout(100)
-    for route,title in [('overview','市场总览'),('data','市场数据'),('features','特征实验室'),('regimes','市场状态'),('alerts','预警中心'),('quality','数据质量'),('lineage','数据血缘'),('system','服务监控'),('api','API 工作台'),('settings','团队与设置')]:
+    for route,title in [('overview','市场总览'),('data','市场数据'),('features','特征实验室'),('regimes','市场状态'),('alerts','预警中心'),('quality','数据质量'),('lineage','数据溯源'),('system','服务监控'),('api','API 工作台'),('settings','团队与设置')]:
         def route_test(route=route,title=title):
             go(route);expect(page.get_by_role('heading',name=title,exact=True)).to_be_visible();assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
         run('page: '+route,route_test)

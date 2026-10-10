@@ -75,7 +75,7 @@ fs.mkdirSync(path.join(dist, 'assets'), { recursive: true });
 fs.writeFileSync(path.join(dist, 'assets/app.js'), app);
 fs.writeFileSync(path.join(dist, 'assets/style.css'), css);
 if (fs.existsSync(path.join(root, 'public'))) fs.cpSync(path.join(root, 'public'), dist, { recursive: true });
-const head = '<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="fintect · 金融市场状态监控平台 · 合成数据交互演示"><title>fintect · 市场状态监控</title>';
+const head = '<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="FinTech · 金融市场状态监控平台 · 合成数据交互演示"><title>FinTech · 市场状态监控</title>';
 fs.writeFileSync(path.join(dist, 'index.html'), `${head}<link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./assets/style.css"></head><body><div id="root"></div><script src="./assets/app.js"></script></body></html>`);
 fs.writeFileSync(path.join(root, 'RegimeLab-preview.html'), `${head}<style>${css.replaceAll('</style', '<\\/style')}</style></head><body><div id="root"></div><script>${app.replaceAll('</script', '<\\/script')}</script></body></html>`);
 console.log(`Built ${files.length} source modules → dist/ and RegimeLab-preview.html (${Math.round(app.length / 1024)} KB JavaScript).`);

@@ -1,6 +1,6 @@
 {
-  "name": "fintect-frontend", "version": "1.0.0", "private": true, "type": "module",
-  "description": "fintect — 金融市场状态监控前端（合成数据演示）",
+  "name": "fintech-frontend", "version": "1.0.0", "private": true, "type": "module",
+  "description": "FinTech — 金融市场状态监控前端（合成数据演示）",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "tsc --noEmit && vite build",

@@ -46,4 +46,4 @@ const paths: Record<string, React.ReactNode> = {
 export function Icon({ name, size = 18, className = '', ...rest }: { name: string; size?: number; className?: string } & React.SVGProps<SVGSVGElement>) {
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className} {...rest}>{paths[name] || paths.grid}</svg>;
 }
-export function Brand({ large = false }: { large?: boolean }) { return <div className={`brand ${large ? 'brand-large' : ''}`}><div className="brand-symbol"><svg viewBox="0 0 32 32" fill="none"><path d="M7 24V15M13 24V8M19 24V12M25 24V5" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"/></svg></div><div><strong>fintect</strong></div></div>; }
+export function Brand({ large = false }: { large?: boolean }) { return <div className={`brand ${large ? 'brand-large' : ''}`}><div className="brand-symbol"><svg viewBox="0 0 32 32" fill="none"><path d="M7 24V15M13 24V8M19 24V12M25 24V5" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round"/></svg></div><div><strong>FinTech</strong></div></div>; }

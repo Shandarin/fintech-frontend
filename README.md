@@ -1,4 +1,4 @@
-# fintect
+# FinTech
 
 **React + TypeScript 金融市场状态监控前端 · 独立前端仓库 · 全部为合成数据。**
 

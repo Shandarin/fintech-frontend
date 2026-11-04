@@ -1,3 +1,4 @@
+import BackendMarket from './BackendMarket';
 import React, { useMemo, useState } from 'react';
 import type { Asset, AssetClass, DocumentItem, ImportedDataset } from '../types';
 import { useApp } from '../state/AppContext';
@@ -9,6 +10,10 @@ import { Icon } from '../components/Icon';
 import { canAdmin, canWrite, CLASS_LABELS, compactNumber, metrics, number, signed, sliceDates, uid } from '../lib/analytics';
 import { downloadCsv, downloadFile, parseCsv } from '../lib/files';
 export default function MarketData() {
+  const [view, setView] = useState(import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_BASE_URL !== '/api' ? 'backend' : 'local');
+  return <><Tabs items={[{ id: 'backend', label: '后端行情 · demo' }, { id: 'local', label: '本地演示 · 模拟数据' }]} value={view} onChange={setView}/>{view === 'backend' ? <BackendMarket/> : <DemoMarketData/>}</>;
+}
+function DemoMarketData() {
   const app = useApp(), { state, assets, from, to, user } = app;
   const [tab, setTab] = useState('quotes'), [query, setQuery] = useState(''), [category, setCategory] = useState('all'), [onlyWatched, setOnlyWatched] = useState(false), [sort, setSort] = useState({ field: 'name', asc: true }), [page, setPage] = useState(0);
   const [document, setDocument] = useState<DocumentItem | null>(null), [docType, setDocType] = useState('all');

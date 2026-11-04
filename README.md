@@ -78,7 +78,7 @@ docker compose -f docker-compose.yml -f compose.source.yml up -d --build
 
 也可以直接上传现有 `dist/` 静态文件；上传产物根目录应直接包含 `index.html`。应用采用Hash路由，例如 `/#/features`，不依赖服务端路由重写。
 
-`VITE_API_BASE_URL` 只作为 API 工作台真实请求测试的默认地址；**设置它不会自动把全部页面切换到真实后台**。正常页面当前仍由模拟状态驱动。后续接入步骤见 `docs/api-integration.md`。
+`VITE_API_BASE_URL` 同时用于市场数据页的后端 demo 行情与 API 工作台，应设置为 HTTPS API 根地址（包含 `/api/v1`）并重新构建。市场数据支持筛选、游标分页、当前页导出、加载/错误/空状态；可切换回本地演示。其他页面继续使用本地模拟状态。临时 Tunnel 地址只放入 Git 忽略的 `.env.production.local`，变更地址后需要重新构建部署。
 
 ## 页面与交互
 

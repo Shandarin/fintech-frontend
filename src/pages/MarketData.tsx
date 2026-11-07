@@ -1,3 +1,4 @@
+import BackendMarket from './BackendMarket';
 import EconomicCalendar from './EconomicCalendar';
 import { ImportRecords } from './Quality';
 import { Indicators, Documents } from './MarketResearch';
@@ -13,6 +14,11 @@ import { Icon } from '../components/Icon';
 import { canAdmin, canWrite, CLASS_LABELS, compactNumber, metrics, number, signed, sliceDates, uid } from '../lib/analytics';
 import { downloadCsv, parseCsv } from '../lib/files';
 export default function MarketData() {
+  const [view,setView] = useState('workspace');
+  return <><Tabs items={[{id:'workspace',label:'市场数据'},{id:'backend',label:'后端行情 · demo'}]} value={view} onChange={setView}/>
+    {view === 'backend' ? <BackendMarket/> : <WorkspaceMarketData/>}</>;
+}
+function WorkspaceMarketData() {
   const app = useApp(), { state, assets, from, to, user } = app;
   const [tab, setTab] = useState('history'), [query, setQuery] = useState(''), [category, setCategory] = useState('all'), [onlyWatched, setOnlyWatched] = useState(false), [sort, setSort] = useState({ field: 'name', asc: true }), [page, setPage] = useState(0);
   const [importOpen, setImportOpen] = useState(false), [imported, setImported] = useState<ImportedDataset | null>(null), [importError, setImportError] = useState(''), [preview, setPreview] = useState<ImportedDataset | null>(null);

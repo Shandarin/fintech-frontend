@@ -728,6 +728,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = MarketData;
+const BackendMarket_1 = __importDefault(require("./BackendMarket"));
 const EconomicCalendar_1 = __importDefault(require("./EconomicCalendar"));
 const Quality_1 = require("./Quality");
 const MarketResearch_1 = require("./MarketResearch");
@@ -742,6 +743,12 @@ const Icon_1 = require("../components/Icon");
 const analytics_1 = require("../lib/analytics");
 const files_1 = require("../lib/files");
 function MarketData() {
+    const [view, setView] = (0, react_1.useState)('workspace');
+    return react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement(ui_1.Tabs, { items: [{ id: 'workspace', label: '市场数据' }, { id: 'backend', label: '后端行情 · demo' }], value: view, onChange: setView }),
+        view === 'backend' ? react_1.default.createElement(BackendMarket_1.default, null) : react_1.default.createElement(WorkspaceMarketData, null));
+}
+function WorkspaceMarketData() {
     const app = (0, AppContext_1.useApp)(), { state, assets, from, to, user } = app;
     const [tab, setTab] = (0, react_1.useState)('history'), [query, setQuery] = (0, react_1.useState)(''), [category, setCategory] = (0, react_1.useState)('all'), [onlyWatched, setOnlyWatched] = (0, react_1.useState)(false), [sort, setSort] = (0, react_1.useState)({ field: 'name', asc: true }), [page, setPage] = (0, react_1.useState)(0);
     const [importOpen, setImportOpen] = (0, react_1.useState)(false), [imported, setImported] = (0, react_1.useState)(null), [importError, setImportError] = (0, react_1.useState)(''), [preview, setPreview] = (0, react_1.useState)(null);
@@ -3257,6 +3264,129 @@ async function requestJson(base, path, options = {}) {
 }
 
 },
+"src/pages/BackendMarket.tsx":function(module,exports,require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = BackendMarket;
+const react_1 = __importStar(require("react"));
+const ui_1 = require("../components/ui");
+const files_1 = require("../lib/files");
+const market_1 = require("../services/market");
+function BackendMarket() {
+    const base = ({ VITE_API_BASE_URL: '', VITE_WS_URL: '' }).VITE_API_BASE_URL || '/market-api/v1';
+    const [filters, setFilters] = (0, react_1.useState)({ asset_id: '', from: '', to: '' });
+    const [query, setQuery] = (0, react_1.useState)(filters), [cursors, setCursors] = (0, react_1.useState)(['']);
+    const [data, setData] = (0, react_1.useState)(null), [busy, setBusy] = (0, react_1.useState)(true);
+    const [error, setError] = (0, react_1.useState)(''), [revision, setRevision] = (0, react_1.useState)(0), [updated, setUpdated] = (0, react_1.useState)('');
+    const cursor = cursors[cursors.length - 1];
+    (0, react_1.useEffect)(() => {
+        const controller = new AbortController();
+        let active = true;
+        setBusy(true);
+        setError('');
+        setData(null);
+        setUpdated('');
+        const params = new URLSearchParams({ dataset: 'demo', limit: '100', cursor });
+        Object.entries(query).forEach(([key, value]) => { if (value)
+            params.set(key, value); });
+        (0, market_1.fetchMarket)(base, params, controller.signal).then(result => {
+            if (active) {
+                setData(result);
+                setUpdated(new Date().toLocaleString('zh-CN'));
+            }
+        }).catch(err => { if (active)
+            setError(err instanceof Error ? err.message : '无法访问后端'); })
+            .finally(() => { if (active)
+            setBusy(false); });
+        return () => { active = false; controller.abort(); };
+    }, [base, query, cursor, revision]);
+    return react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement(ui_1.PageHead, { title: "\u540E\u7AEF\u884C\u60C5", actions: react_1.default.createElement(react_1.default.Fragment, null,
+                react_1.default.createElement(ui_1.Badge, { tone: "amber" }, "\u540E\u7AEF demo \u00B7 \u5408\u6210\u6570\u636E"),
+                react_1.default.createElement(ui_1.Button, { icon: "refresh", busy: busy, onClick: () => setRevision(n => n + 1) }, "\u5237\u65B0"),
+                react_1.default.createElement(ui_1.Button, { icon: "download", disabled: !data?.items.length || busy, onClick: () => (0, files_1.downloadCsv)('后端-demo-行情-当前页.csv', ['资产', '指标', '日期', '数值', '单位', '来源', '定位'], data.items.map(row => [row.entity_id, row.metric, row.business_date, row.value, row.unit, row.source_id, row.source_locator])) }, "\u5BFC\u51FA\u5F53\u524D\u9875")) }),
+        react_1.default.createElement(ui_1.Notice, null, "\u672C\u9875\u901A\u8FC7\u7F51\u7EDC\u8BFB\u53D6\u540E\u7AEF demo \u6570\u636E\u96C6\uFF0C\u4E0D\u662F\u5B9E\u65F6\u884C\u60C5\u3002\u5176\u4ED6\u9875\u9762\u53CA\u672C\u5730\u6F14\u793A\u89C6\u56FE\u4ECD\u4F7F\u7528\u6A21\u62DF\u72B6\u6001\u3002\u672A\u77E5\u5355\u4F4D\u539F\u6837\u5C55\u793A\uFF0C\u4E0D\u8865\u9020\u4EF7\u683C\u3001\u6210\u4EA4\u91CF\u6216\u6A21\u578B\u7ED3\u679C\u3002"),
+        react_1.default.createElement("form", { className: "section-toolbar", onSubmit: event => { event.preventDefault(); if (filters.from && filters.to && filters.from > filters.to)
+                return; setQuery({ ...filters }); setCursors(['']); } },
+            react_1.default.createElement("div", { className: "filter-row" },
+                react_1.default.createElement(ui_1.Field, { label: "\u8D44\u4EA7\u540D\u79F0 / \u6807\u8BC6" },
+                    react_1.default.createElement("input", { value: filters.asset_id, onChange: e => setFilters({ ...filters, asset_id: e.target.value }), placeholder: "\u7559\u7A7A\u67E5\u8BE2\u5168\u90E8" })),
+                react_1.default.createElement(ui_1.Field, { label: "\u5F00\u59CB\u65E5\u671F" },
+                    react_1.default.createElement("input", { type: "date", value: filters.from, max: filters.to || undefined, onChange: e => setFilters({ ...filters, from: e.target.value }) })),
+                react_1.default.createElement(ui_1.Field, { label: "\u7ED3\u675F\u65E5\u671F" },
+                    react_1.default.createElement("input", { type: "date", value: filters.to, min: filters.from || undefined, onChange: e => setFilters({ ...filters, to: e.target.value }) })),
+                react_1.default.createElement("button", { type: "submit", className: "btn btn-primary", disabled: busy }, "\u67E5\u8BE2"))),
+        react_1.default.createElement("div", { "aria-live": "polite" },
+            busy && react_1.default.createElement(ui_1.Notice, null, "\u6B63\u5728\u8BF7\u6C42\u540E\u7AEF\u884C\u60C5\u2026"),
+            error && react_1.default.createElement(ui_1.Notice, { tone: "warning" },
+                error,
+                "\u3002\u8BF7\u68C0\u67E5\u7F51\u7EDC\u6216\u96A7\u9053\u72B6\u6001\u3002",
+                react_1.default.createElement(ui_1.Button, { onClick: () => setRevision(n => n + 1) }, "\u91CD\u8BD5"))),
+        !busy && !error && data && react_1.default.createElement(ui_1.Card, { className: "table-card", title: "\u5E02\u573A\u89C2\u6D4B\u8BB0\u5F55", subtitle: '最近成功请求：' + updated },
+            react_1.default.createElement("div", { className: "table-scroll" },
+                react_1.default.createElement("table", { className: "data-table" },
+                    react_1.default.createElement("thead", null,
+                        react_1.default.createElement("tr", null,
+                            react_1.default.createElement("th", null, "\u8D44\u4EA7"),
+                            react_1.default.createElement("th", null, "\u6307\u6807"),
+                            react_1.default.createElement("th", null, "\u4E1A\u52A1\u65E5\u671F"),
+                            react_1.default.createElement("th", null, "\u6570\u503C"),
+                            react_1.default.createElement("th", null, "\u5355\u4F4D"),
+                            react_1.default.createElement("th", null, "\u6765\u6E90\u5B9A\u4F4D"))),
+                    react_1.default.createElement("tbody", null, data.items.map(row => react_1.default.createElement("tr", { key: row.record_id },
+                        react_1.default.createElement("td", null, row.entity_id),
+                        react_1.default.createElement("td", null, row.metric),
+                        react_1.default.createElement("td", null, row.business_date),
+                        react_1.default.createElement("td", { className: "numeric" }, row.value),
+                        react_1.default.createElement("td", null, row.unit),
+                        react_1.default.createElement("td", { title: row.source_id }, row.source_locator)))))),
+            !data.items.length && react_1.default.createElement(ui_1.Empty, { title: "\u540E\u7AEF\u672A\u8FD4\u56DE\u5339\u914D\u8BB0\u5F55", description: "\u8BF7\u8C03\u6574\u8D44\u4EA7\u6216\u65E5\u671F\u8303\u56F4\uFF1B\u4E0D\u4F1A\u4F7F\u7528\u672C\u5730\u6A21\u62DF\u6570\u636E\u586B\u5145\u3002" }),
+            react_1.default.createElement("div", { className: "table-footer" },
+                react_1.default.createElement("span", null,
+                    "\u7B2C ",
+                    cursors.length,
+                    " \u9875 \u00B7 \u672C\u9875 ",
+                    data.items.length,
+                    " \u6761"),
+                react_1.default.createElement("div", null,
+                    react_1.default.createElement(ui_1.Button, { disabled: cursors.length === 1, onClick: () => setCursors(values => values.slice(0, -1)) }, "\u4E0A\u4E00\u9875"),
+                    react_1.default.createElement(ui_1.Button, { disabled: !data.next_cursor || cursors.includes(data.next_cursor), onClick: () => setCursors(values => [...values, data.next_cursor]) }, "\u4E0B\u4E00\u9875")))));
+}
+
+},
 "src/pages/EconomicCalendar.tsx":function(module,exports,require){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -4223,6 +4353,24 @@ function LiveReplay({ section }) {
                             react_1.default.createElement("th", null, "\u6307\u6807"),
                             react_1.default.createElement("th", null, "\u7ED3\u679C"))),
                     react_1.default.createElement("tbody", null)))));
+}
+
+},
+"src/services/market.ts":function(module,exports,require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.fetchMarket = fetchMarket;
+const httpClient_1 = require("./httpClient");
+async function fetchMarket(base, params, signal) {
+    if (!base.trim())
+        throw new Error('请配置 VITE_API_BASE_URL 后重新构建。');
+    const result = await (0, httpClient_1.requestJson)(base, '/market?' + params, { signal });
+    if (result.status < 200 || result.status >= 300)
+        throw new Error('行情请求失败：HTTP ' + result.status);
+    const body = result.body;
+    if (!body || body.dataset !== 'demo' || typeof body.next_cursor !== 'string' || !Array.isArray(body.items) || body.items.some(row => !row || ['record_id', 'entity_id', 'metric', 'business_date', 'value', 'unit', 'source_id', 'source_locator'].some(key => typeof row[key] !== 'string')))
+        throw new Error('后端行情响应格式不符合约定。');
+    return body;
 }
 
 },

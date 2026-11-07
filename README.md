@@ -80,7 +80,7 @@ docker compose -f docker-compose.yml -f compose.source.yml up -d --build
 
 也可以直接上传现有 `dist/` 静态文件；上传产物根目录应直接包含 `index.html`。应用采用Hash路由，例如 `/#/features`，不依赖服务端路由重写。
 
-`VITE_API_BASE_URL` 只作为 API 工作台真实请求测试的默认地址；**设置它不会自动把全部页面切换到真实后台**。正常页面当前仍由模拟状态驱动。后续接入步骤见 `docs/api-integration.md`。
+市场数据默认展示 main 数据集和模型回放。Vite 将 /market-api/ 转发到本机 8082，将 /api/ 和 /ws/ 转发到回放服务 8080。可切换到后端 demo 行情表格，支持筛选、分页及当前页导出。demo 表格与 API 工作台可通过 VITE_API_BASE_URL 配置包含 /api/v1 的完整地址，留空时 demo 表格使用 /market-api/v1。正式部署需配置对应的反向代理。
 
 ## 页面与交互
 

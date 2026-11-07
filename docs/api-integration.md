@@ -2,11 +2,13 @@
 
 ## 当前执行路径
 
-页面 → AppContext（本地状态/角色）→ 合成数据/analytics纯函数。
+市场数据的后端 demo 视图 → market / httpClient → `GET /api/v1/market?dataset=demo`。支持资产和日期筛选、游标分页与当前页导出；失败不会回退模拟数据。
+
+市场总览、行情、指标、日历、文档和质量页面通过 /market-api/v1 读取 main 数据集，市场状态通过 /api/v1 读取回放服务。AppContext 管理本地偏好及演示功能状态。
 
 API工作台 → mockRequest（本地函数），或用户显式选择真实请求 → httpClient。
 
-整个界面不会因为填写了 VITE_API_BASE_URL 就自动变成生产系统，也不会在真实请求失败时回退显示模拟数据。
+VITE_API_BASE_URL 用于可选 demo 行情和 API 工作台。真实接口请求失败会显示错误。
 
 ## 逐步替换，不改变仓库结构
 

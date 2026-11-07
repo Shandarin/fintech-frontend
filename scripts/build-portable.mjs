@@ -18,7 +18,7 @@ const modules = [];
 let errors = 0;
 for (const p of files) {
   const id = path.relative(root, p).replaceAll('\\', '/');
-  const source = fs.readFileSync(p, 'utf8').replaceAll('import.meta.env', "({VITE_API_BASE_URL:'/api',VITE_WS_URL:''})");
+  const source = fs.readFileSync(p, 'utf8').replaceAll('import.meta.env', "({VITE_API_BASE_URL:'',VITE_WS_URL:''})");
   const result = ts.transpileModule(source, {
     fileName: p,
     reportDiagnostics: true,

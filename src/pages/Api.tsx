@@ -1,23 +1,89 @@
-import React, { useState } from 'react';
-import { useApp } from '../state/AppContext';
-import { Badge, Button, Card, Field, Notice, PageHead, Tabs, Toggle } from '../components/ui';
+import React, { useEffect, useRef, useState } from 'react';
+import { Badge, Button, Card, Field, Info, Modal, Notice, PageHead } from '../components/ui';
 import { Icon } from '../components/Icon';
-const WORKSPACE_QUERY = '';
 import { requestJson } from '../services/httpClient';
-import { timeLabel } from '../lib/analytics';
 import { downloadFile } from '../lib/files';
-const ENDPOINTS = [ ['GET', '/assets', '资产与行情查询'], ['GET', '/features', '特征快照查询'], ['GET', '/states', '状态查询'], ['GET', '/alerts', '预警查询'], ['GET', '/rules', '规则查询'], ['POST', '/rules', '创建预警规则'] ];
-const SAMPLE_RULE = JSON.stringify({ name: 'API创建的演示规则', assetId: 'all', metric: 'volatility20', operator: 'gt', threshold: 8, severity: 'medium', cooldown: 30, enabled: true }, null, 2);
+import './tools-pages.css';
+
+type Endpoint = {label:string; base:string; path:string};
+const ENDPOINTS:Endpoint[] = [
+  {label:'资产目录',base:'/market-api/v1',path:'/assets?limit=1000'},
+  {label:'宏观指标',base:'/market-api/v1',path:'/indicators?dataset=main&limit=1000'},
+  {label:'经济日历',base:'/market-api/v1',path:'/economic-calendar?dataset=main&limit=1000'},
+  {label:'资讯研报',base:'/market-api/v1',path:'/documents?dataset=main&limit=1000'},
+  {label:'数据来源',base:'/market-api/v1',path:'/sources?limit=1000'},
+  {label:'导入批次',base:'/market-api/v1',path:'/runs?dataset=main&limit=1000'},
+  {label:'质量检查',base:'/market-api/v1',path:'/quality?dataset=main&limit=1000'},
+  {label:'模型目录',base:'/api/v1',path:'/models?limit=1000'},
+  {label:'回放会话',base:'/api/v1',path:'/stream/sessions?limit=1000'},
+];
+function hasContent(body:unknown):boolean {
+  if (body == null || body === '') return false;
+  if (Array.isArray(body)) return body.length > 0;
+  if (typeof body === 'object') {
+    const value = body as Record<string,unknown>;
+    if (Array.isArray(value.items)) return value.items.length > 0;
+    if (Array.isArray(value.data)) return value.data.length > 0;
+    return Object.keys(value).length > 0;
+  }
+  return true;
+}
+
 export default function Api() {
-  const app = useApp(); const [tab, setTab] = useState('rest'), [method, setMethod] = useState('GET'), [path, setPath] = useState('/assets'), [payload, setPayload] = useState(''), [query, setQuery] = useState(WORKSPACE_QUERY), [busy, setBusy] = useState(false), [response, setResponse] = useState(''), [status, setStatus] = useState<number | null>(null), [ms, setMs] = useState(0), [mode, setMode] = useState('real'), [base, setBase] = useState('/api/v1'), [eventType, setEventType] = useState('all');
-  const run = async () => { setBusy(true); const start = performance.now(); try {
-    let body: unknown = undefined; const reqMethod = tab === 'graphql' ? 'POST' : method, reqPath = tab === 'graphql' ? '/graphql' : path;
-    if (tab === 'graphql') body = { query }; else if (method !== 'GET') body = JSON.parse(payload);
-    { if (!base.trim()) throw new Error('请输入API Base URL'); const result = await requestJson(base, reqPath, { method: reqMethod, body }); setStatus(result.status); setResponse(JSON.stringify(result.body, null, 2)); }
-  } catch (e) { setStatus(0); setResponse(JSON.stringify({ error: e instanceof Error ? e.message : '请求失败', note: '错误不会被静默替换成模拟成功结果。' }, null, 2)); } finally { setMs(Math.round(performance.now() - start)); setBusy(false); } };
-  return <><PageHead title="API 工作台" actions={<Badge tone="amber">默认仅本地模拟</Badge>}/><Tabs items={[{ id: 'rest', label: 'RESTful API' }, { id: 'graphql', label: 'GraphQL' }, { id: 'websocket', label: 'WebSocket 事件' }, { id: 'docs', label: '接口文档' }]} value={tab} onChange={v => { setTab(v); setResponse(''); setStatus(null); }}/>
-    {['rest', 'graphql'].includes(tab) && <><div className="api-mode-bar"><Field label="请求环境"><select value={mode} onChange={e => { setMode(e.target.value); setResponse(''); }}><option value="real">真实API测试（手动执行）</option></select></Field>{mode === 'real' && <Field label="API Base URL"><input value={base} onChange={e => setBase(e.target.value)} placeholder="https://api.example.com/api"/></Field>}<span className="muted small">当前身份：{app.user?.name} · 限流 {app.state.apiLimit} 次/分钟（模拟）</span></div>{mode === 'real' && <Notice tone="warning">点击发送后才会访问此地址。不会携带演示身份或任何JWT；真实服务应返回401直至完成认证接入。前端跨域需要后端配置CORS。</Notice>}<div className="api-layout"><Card title={tab === 'rest' ? '接口目录' : '查询模板'} subtitle={tab === 'rest' ? '点击接口填入请求' : '仅支持预设工作台查询'}><div className="endpoint-list">{tab === 'rest' ? ENDPOINTS.map(([m, p, label]) => <button type="button" key={m + p} className={m === method && p === path ? 'active' : ''} onClick={() => { setMethod(m); setPath(p); setPayload(SAMPLE_RULE); }}><span className={`method method-${m}`}>{m}</span><div><code>{p}</code><small>{label}</small></div></button>) : <><button type="button" className="active" onClick={() => setQuery(WORKSPACE_QUERY)}><Icon name="branch"/><div><strong>WorkspaceSnapshot</strong><small>资产 + 状态 + 未读预警</small></div></button><p className="small muted padded">模拟器不包含完整GraphQL解析与验证。修改成其他查询会返回400，避免伪装为真实GraphQL引擎。</p></>}</div></Card><Card title="请求与响应" action={<Button variant="primary" icon="play" busy={busy} onClick={run}>发送{mode === 'mock' ? '模拟' : '真实'}请求</Button>}><div className="card-inner">{tab === 'rest' ? <><div className="request-line"><select aria-label="HTTP方法" value={method} onChange={e => setMethod(e.target.value)}><option>GET</option><option>POST</option><option>PATCH</option><option>DELETE</option></select><input aria-label="API路径" value={path} onChange={e => setPath(e.target.value)}/></div>{method !== 'GET' && <Field label="JSON 请求体"><textarea className="code-input" rows={10} value={payload} onChange={e => setPayload(e.target.value)} spellCheck={false}/></Field>}</> : <Field label="GraphQL Query"><textarea className="code-input" rows={8} value={query} onChange={e => setQuery(e.target.value)} spellCheck={false}/></Field>}<div className="response-title"><strong>响应结果</strong>{status !== null && <><Badge tone={status >= 200 && status < 300 ? 'green' : 'red'}>{status || 'Network error'}</Badge><span>{ms} ms {mode === 'mock' ? '（含人为延时，非性能测量）' : '（浏览器请求）'}</span></>}<Button variant="ghost" disabled={!response} icon="download" onClick={() => downloadFile('api-response.json', response, 'application/json')}>导出</Button></div><pre className="code-block response-block">{response || '// 选择接口并发送请求，查看结构化结果。\n// 模拟模式支持 200 / 201 / 400 / 401 / 403 / 404 / 429 响应。'}</pre></div></Card></div></>}
-    {tab === 'websocket' && <><Notice>这是浏览器定时器产生的模拟事件流，未建立真实WebSocket连接。事件使用预留主题和payload结构；历史价格不会因模拟消息而被篡改。</Notice><Card title="事件订阅控制台" subtitle="模拟 market.tick / regime.updated / alert.created" action={<div className="row-actions"><Badge dot tone={app.state.prefs.live ? 'green' : 'neutral'}>{app.state.prefs.live ? '模拟流已启用' : '模拟流已暂停'}</Badge><Toggle checked={app.state.prefs.live} label="切换模拟事件推送" onChange={live => app.update(s => ({ ...s, prefs: { ...s.prefs, live } }), undefined, 'self')}/></div>}><div className="section-toolbar padded"><select aria-label="订阅主题筛选" value={eventType} onChange={e => setEventType(e.target.value)}><option value="all">全部主题</option><option>market.tick</option><option>regime.updated</option><option>alert.created</option></select><Button icon="trash" onClick={app.clearEvents}>清空事件记录</Button></div><div className="event-console">{app.events.filter(e => (eventType === 'all' || e.type === eventType) && (!e.payload.assetId || app.assets.some(a => a.id === e.payload.assetId))).map(e => <div key={e.id} className="event-row"><span>{timeLabel(e.at)}</span><b className={`event-type ${e.type === 'alert.created' ? 'event-alert' : ''}`}>{e.type}</b><code>{JSON.stringify(e.payload)}</code></div>)}{!app.events.length && <p className="console-empty">{app.state.prefs.live ? '等待模拟事件… 每5秒生成一个行情事件。' : '模拟事件已暂停，启用后开始接收。'}</p>}</div><div className="card-footnote">保留最近60条事件。点击预警中心“检测当前规则”可生成 alert.created 事件。</div></Card></>}
-    {tab === 'docs' && <><Card title="接口契约概览" subtitle="完整OpenAPI草案位于 docs/openapi.yaml；以下为实际模拟器支持的接口"><div className="table-scroll"><table className="data-table"><thead><tr><th>方法</th><th>路径</th><th>职责</th><th>权限 / 行为</th></tr></thead><tbody>{ENDPOINTS.map(([method, path, desc]) => <tr key={method + path}><td><span className={`method method-${method}`}>{method}</span></td><td className="mono">{path}</td><td>{desc}</td><td>{method === 'GET' ? '已登录；按资产范围过滤' : '分析师 / 管理员；参数验证'}</td></tr>)}<tr><td><span className="method method-POST">POST</span></td><td className="mono">/graphql</td><td>工作台聚合查询</td><td>预设WorkspaceSnapshot查询</td></tr></tbody></table></div></Card><div className="two-col"><Card title="鉴权与错误约定"><div className="card-inner"><pre className="code-block">{JSON.stringify({ requestId: 'req-...', mock: true, error: { code: 'FORBIDDEN_ASSET', message: '当前角色不可访问该资产' } }, null, 2)}</pre><p className="small muted">实际项目用JWT/OAuth2在服务端验证身份。这里的角色选择只演示UI行为，不提供身份安全。</p></div></Card><Card title="实时事件约定"><div className="card-inner"><pre className="code-block">{JSON.stringify({ id: 'evt-...', type: 'regime.updated', at: 'ISO-8601', payload: { assetId: 'csi300', regime: 'bull', snapshotDate: '2026-10-09', mock: true } }, null, 2)}</pre><p className="small muted">真实连接需补齐授权、重连退避、订阅确认、心跳、序号去重和断线快照补取。</p></div></Card></div></>}
+  const [method, setMethod] = useState('GET');
+  const [base, setBase] = useState(ENDPOINTS[0].base);
+  const [path, setPath] = useState(ENDPOINTS[0].path);
+  const [payload, setPayload] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [result, setResult] = useState<{status:number; body:unknown; duration:number}>();
+  const [confirmWrite, setConfirmWrite] = useState(false);
+  const controller = useRef<AbortController | null>(null);
+  useEffect(() => () => controller.current?.abort(), []);
+  const clearResult = () => { setResult(undefined); setError(''); };
+  const run = async () => {
+    let body:unknown;
+    try { if (method !== 'GET' && payload.trim()) body = JSON.parse(payload); }
+    catch { setConfirmWrite(false); setError('请求体不是有效的 JSON'); return; }
+    if (!base.trim() || !path.trim()) { setConfirmWrite(false); setError('请填写服务地址和请求路径'); return; }
+    setConfirmWrite(false); setBusy(true); clearResult();
+    const abort = new AbortController(); controller.current = abort;
+    const start = performance.now();
+    try {
+      const response = await requestJson(base.trim(),path.trim(),{method,body,signal:abort.signal});
+      if (abort.signal.aborted) return;
+      setResult({status:response.status,body:response.body,duration:Math.round(performance.now()-start)});
+      if (response.status >= 400) setError('请求失败（HTTP ' + response.status + '）');
+    } catch (e) {
+      if (!abort.signal.aborted) setError(e instanceof Error ? e.message : '请求失败');
+    } finally { if (!abort.signal.aborted) setBusy(false); }
+  };
+  const responseText = result && hasContent(result.body) ? JSON.stringify(result.body,null,2) : '';
+  return <>
+    <PageHead title="API 访问" actions={<Info label="请求说明">请求直接发送至所填服务地址；接口响应由服务端决定。请勿在公开配置中填写密钥。</Info>}/>
+    <div className="api-console-layout">
+      <Card title="接口目录" className="api-catalog"><div className="api-catalog-list">
+        {ENDPOINTS.map(endpoint => <button type="button" key={endpoint.base+endpoint.path} disabled={busy} className={base === endpoint.base && path === endpoint.path && method === 'GET' ? 'active' : ''} onClick={() => {setBase(endpoint.base);setPath(endpoint.path);setMethod('GET');setPayload('');clearResult();}}>
+          <span className="api-method">GET</span><span>{endpoint.label}</span><Icon name="chevron" size={14}/>
+        </button>)}
+      </div></Card>
+      <div className="api-request-column">
+        <Card title="请求" className="api-request-card"><form onSubmit={e => {e.preventDefault();if (method === 'GET') void run();else setConfirmWrite(true);}}>
+          <Field label="服务地址"><input value={base} onChange={e => {setBase(e.target.value);clearResult();}} disabled={busy} required autoComplete="off" spellCheck={false}/></Field>
+          <div className="api-request-line">
+            <Field label="方法"><select aria-label="HTTP 方法" value={method} onChange={e => {setMethod(e.target.value);clearResult();}} disabled={busy}><option>GET</option><option>POST</option><option>PATCH</option><option>DELETE</option></select></Field>
+            <Field label="请求路径"><input value={path} onChange={e => {setPath(e.target.value);clearResult();}} disabled={busy} required autoComplete="off" spellCheck={false}/></Field>
+          </div>
+          {method !== 'GET' && <Field label="JSON 请求体"><textarea className="code-input" rows={8} value={payload} onChange={e => {setPayload(e.target.value);clearResult();}} disabled={busy} spellCheck={false}/></Field>}
+          <div className="api-request-actions"><Button type="submit" variant="primary" icon="play" busy={busy} disabled={!base.trim() || !path.trim()}>发送请求</Button></div>
+        </form></Card>
+        {error && <Notice tone="warning">{error}</Notice>}
+        {result && <div className="api-response-status" role="status"><Badge tone={result.status >= 200 && result.status < 300 ? 'green' : 'red'}>HTTP {result.status}</Badge><span>{result.duration.toLocaleString()} ms</span>{responseText && <Button variant="ghost" icon="download" onClick={() => downloadFile('api-response.json',responseText,'application/json')}>导出响应</Button>}</div>}
+        {responseText && <Card title="响应"><pre className="code-block api-response-code">{responseText}</pre></Card>}
+      </div>
+    </div>
+    {confirmWrite && <Modal title={`发送 ${method} 请求？`} onClose={() => setConfirmWrite(false)} footer={<><Button onClick={() => setConfirmWrite(false)}>取消</Button><Button variant="danger" onClick={() => void run()}>确认发送</Button></>}>
+      <p>此请求可能修改或删除服务端数据，提交后可能无法撤销。</p><code className="request-confirm-url">{base.replace(/\/$/,'')}/{path.replace(/^\//,'')}</code>
+    </Modal>}
   </>;
 }

@@ -1,5 +1,5 @@
 /** Build a self-contained browser preview from the same React/TypeScript source.
- * Standard deployment uses `npm run build` (Vite); this builder is for offline demos.
+ * Standard deployment uses `npm run build` (Vite); this builder is a portable shell; data still requires the configured backend APIs.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -15,6 +15,7 @@ catch (error) {
 }
 const files = new Set([path.join(root, 'src/main.tsx')]);
 const modules = [];
+const styles = new Set();
 let errors = 0;
 for (const p of files) {
   const id = path.relative(root, p).replaceAll('\\', '/');
@@ -34,7 +35,7 @@ for (const p of files) {
     }
   }
   for (const [, dependency] of result.outputText.matchAll(/require\("([.][^"]+)"\)/g)) {
-    if (dependency.endsWith('.css')) continue;
+    if (dependency.endsWith('.css')) { styles.add(path.resolve(path.dirname(p), dependency)); continue; }
     const base = path.resolve(path.dirname(p), dependency);
     const file = [base + '.tsx', base + '.ts'].find(candidate => fs.existsSync(candidate));
     if (!file) throw new Error('Missing source module: ' + dependency);
@@ -69,13 +70,13 @@ function load(id){
 }
 load('src/main.tsx');
 })();`;
-const css = fs.readFileSync(path.join(root, 'src/styles.css'), 'utf8');
+const css = [...styles].map(file => fs.readFileSync(file, 'utf8')).join('\n');
 const dist = path.join(root, 'dist');
 fs.mkdirSync(path.join(dist, 'assets'), { recursive: true });
 fs.writeFileSync(path.join(dist, 'assets/app.js'), app);
 fs.writeFileSync(path.join(dist, 'assets/style.css'), css);
 if (fs.existsSync(path.join(root, 'public'))) fs.cpSync(path.join(root, 'public'), dist, { recursive: true });
-const head = '<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="FinTech · 金融市场状态监控平台 · 沪深 300 历史回放"><title>FinTech · 市场状态监控</title>';
+const head = '<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f8f7f4"><meta name="description" content="FinTech · 行情、市场研究与历史回放"><title>市场总览 · FinTech</title>';
 fs.writeFileSync(path.join(dist, 'index.html'), `${head}<link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./assets/style.css"></head><body><div id="root"></div><script src="./assets/app.js"></script></body></html>`);
 fs.writeFileSync(path.join(root, 'RegimeLab-preview.html'), `${head}<style>${css.replaceAll('</style', '<\\/style')}</style></head><body><div id="root"></div><script>${app.replaceAll('</script', '<\\/script')}</script></body></html>`);
 console.log(`Built ${files.size} source modules → dist/ and RegimeLab-preview.html (${Math.round(app.length / 1024)} KB JavaScript).`);

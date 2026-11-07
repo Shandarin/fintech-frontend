@@ -1,54 +1,46 @@
-import BackendMarket from './BackendMarket';
-import EconomicCalendar from './EconomicCalendar';
-import { ImportRecords } from './Quality';
-import { Indicators, Documents } from './MarketResearch';
+import React, { useEffect, useState } from 'react';
+import { PageHead, Tabs } from '../components/ui';
 import HistoricalQuotes from './HistoricalQuotes';
-import React, { useMemo, useState } from 'react';
-import type { Asset, AssetClass, ImportedDataset } from '../types';
-import { useApp } from '../state/AppContext';
-import { SNAPSHOT } from '../data/workspace';
-import { Badge, Button, Card, Empty, Field, IconButton, Modal, Notice, PageHead, SearchBox, Tabs, Toggle } from '../components/ui';
-import { Sparkline, TimeChart } from '../components/charts';
-import { DateRange } from '../components/DateRange';
-import { Icon } from '../components/Icon';
-import { canAdmin, canWrite, CLASS_LABELS, compactNumber, metrics, number, signed, sliceDates, uid } from '../lib/analytics';
-import { downloadCsv, parseCsv } from '../lib/files';
-export default function MarketData() {
-  const [view,setView] = useState('workspace');
-  return <><Tabs items={[{id:'workspace',label:'市场数据'},{id:'backend',label:'后端行情 · demo'}]} value={view} onChange={setView}/>
-    {view === 'backend' ? <BackendMarket/> : <WorkspaceMarketData/>}</>;
+import EconomicCalendar from './EconomicCalendar';
+import { Documents, Indicators } from './MarketResearch';
+import './market-pages.css';
+
+const sections = [
+  { id: 'history', label: '行情' },
+  { id: 'macro', label: '宏观' },
+  { id: 'calendar', label: '经济日历' },
+  { id: 'news', label: '资讯研报' },
+];
+
+function selectedSection() {
+  const value = new URLSearchParams(location.hash.split('?')[1] || '').get('tab');
+  return sections.some(section => section.id === value) ? value! : 'history';
 }
-function WorkspaceMarketData() {
-  const app = useApp(), { state, assets, from, to, user } = app;
-  const [tab, setTab] = useState('history'), [query, setQuery] = useState(''), [category, setCategory] = useState('all'), [onlyWatched, setOnlyWatched] = useState(false), [sort, setSort] = useState({ field: 'name', asc: true }), [page, setPage] = useState(0);
-  const [importOpen, setImportOpen] = useState(false), [imported, setImported] = useState<ImportedDataset | null>(null), [importError, setImportError] = useState(''), [preview, setPreview] = useState<ImportedDataset | null>(null);
-  const [sourceDetail, setSourceDetail] = useState<string | null>(null);
-  const selected = assets.find(a => a.id === app.selectedAsset) || assets[0];
-  const filtered = useMemo(() => assets.filter(a => (category === 'all' || a.category === category) && (!onlyWatched || state.watchlist.includes(a.id)) && `${a.name} ${a.symbol}`.toLowerCase().includes(query.toLowerCase())).sort((a, b) => { const psA = a.prices.filter(p => p.date <= to), psB = b.prices.filter(p => p.date <= to); let v = sort.field === 'name' ? a.name.localeCompare(b.name) : sort.field === 'close' ? (psA.at(-1)?.close || 0) - (psB.at(-1)?.close || 0) : metrics(psA).return1d - metrics(psB).return1d; return sort.asc ? v : -v; }), [assets, category, onlyWatched, state.watchlist, query, sort, to]);
-  const effectivePage = Math.min(page, Math.max(0, Math.ceil(filtered.length / 8) - 1));
-  const star = (a: Asset) => app.update(s => ({ ...s, watchlist: s.watchlist.includes(a.id) ? s.watchlist.filter(id => id !== a.id) : [...s.watchlist, a.id] }), undefined, 'self');
-  const sortBy = (field: string) => setSort(s => ({ field, asc: s.field === field ? !s.asc : field === 'name' }));
-  const exportQuotes = () => { const headers = ['数据性质', '资产', '代码', '类型', '日期', '收盘价', '成交量']; downloadCsv('市场行情-模拟数据.csv', headers, filtered.flatMap(a => sliceDates(a.prices, from, to).map(p => ['合成数据', a.name, a.symbol, CLASS_LABELS[a.category], p.date, p.close, p.volume]))); app.notify('已导出筛选区间的合成行情 CSV'); };
-  const saveImport = () => {
-    if (!imported) return;
-    const ok = app.update(s => ({ ...s, imports: [imported, ...s.imports], sources: [...s.sources, { id: imported.id, name: imported.name, type: '导入', status: 'online', frequency: '手动导入', records: imported.rows.length, completeness: 100 * imported.rows.flat().filter(Boolean).length / Math.max(1, imported.rows.length * imported.headers.length), consistency: 100, timeliness: 100, updatedAt: new Date().toLocaleString('zh-CN', { hour12: false }) }] }), `导入CSV ${imported.name}`, 'admin');
-    if (ok) { setImportOpen(false); setImported(null); setTab('sources'); app.notify('CSV已保存到本地数据源预览，未加入模型计算。'); }
-  };
-  const renderRows = (a: Asset) => { const ps = a.prices.filter(p => p.date <= to), m = metrics(ps); return <tr key={a.id} className={a.id === selected?.id ? 'selected-row' : ''}><td><button type="button" aria-label={`${state.watchlist.includes(a.id) ? '取消关注' : '关注'}${a.name}`} className={`star-button ${state.watchlist.includes(a.id) ? 'starred' : ''}`} onClick={() => star(a)}><Icon name="star" size={16}/></button></td><td><button type="button" className="asset-name" onClick={() => app.setSelectedAsset(a.id)}><strong>{a.name}</strong><small>{a.symbol}</small></button></td><td><Badge>{CLASS_LABELS[a.category]}</Badge></td><td className="numeric">{number(ps.at(-1)?.close || 0, a.category === 'fx' ? 4 : 2)}<small className="currency">{a.currency}</small></td><td className={`numeric ${m.return1d >= 0 ? 'positive' : 'negative'}`}>{signed(m.return1d)}</td><td className="numeric">{number(m.volatility20)}%</td><td className="mini-trend"><Sparkline values={ps.slice(-30).map(p => p.close)} positive={(ps.at(-1)?.close || 0) >= (ps.at(-30)?.close || 0)}/></td><td><IconButton icon="chevron" label={`查看${a.name}`} onClick={() => app.setSelectedAsset(a.id)}/></td></tr>; };
-  return <><PageHead title="市场数据" actions={<><Button icon="upload" disabled={!canAdmin(user)} title={!canAdmin(user) ? '管理员可导入数据' : ''} onClick={() => { setImported(null); setImportError(''); setImportOpen(true); }}>导入 CSV</Button><Button variant="primary" icon="download" onClick={exportQuotes} disabled={tab !== 'quotes'}>导出模拟行情</Button></>}/><Tabs items={[{ id: 'history', label: '历史行情' }, { id: 'quotes', label: '模拟行情', count: assets.length }, { id: 'macro', label: '宏观指标' }, { id: 'calendar', label: '经济日历' }, { id: 'news', label: '舆情与研报' }, { id: 'sources', label: '数据源' }]} value={tab} onChange={v => { setTab(v); setQuery(''); }}/>
-    {tab === 'history' && <HistoricalQuotes/>}
-    {tab === 'quotes' && <><div className="section-toolbar"><div className="filter-row"><SearchBox value={query} onChange={v => { setQuery(v); setPage(0); }} placeholder="搜索资产名称或代码"/><select aria-label="资产类别" value={category} onChange={e => { setCategory(e.target.value); setPage(0); }}><option value="all">全部资产类型</option>{(Object.entries(CLASS_LABELS) as [AssetClass, string][]).filter(([id]) => user?.allowedClasses.includes(id)).map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select><button type="button" className={`btn ${onlyWatched ? 'btn-active' : 'btn-secondary'}`} onClick={() => { setOnlyWatched(!onlyWatched); setPage(0); }}><Icon name="star" size={15}/>我的关注</button></div><DateRange/></div>
-      <Card className="table-card"><div className="table-scroll"><table className="data-table"><thead><tr><th className="w-star"/><th><button type="button" onClick={() => sortBy('name')}>资产名称 <Icon name="down" size={12}/></button></th><th>类型</th><th className="numeric"><button type="button" onClick={() => sortBy('close')}>收盘价 <Icon name="down" size={12}/></button></th><th className="numeric"><button type="button" onClick={() => sortBy('return')}>日涨跌 <Icon name="down" size={12}/></button></th><th className="numeric">年化波动率</th><th>近30日趋势</th><th/></tr></thead><tbody>{filtered.slice(effectivePage * 8, effectivePage * 8 + 8).map(renderRows)}</tbody></table></div>{!filtered.length && <Empty/>}<div className="table-footer"><span>显示 {filtered.length ? effectivePage * 8 + 1 : 0}–{Math.min((effectivePage + 1) * 8, filtered.length)} / {filtered.length} 项 · 收盘截至 {to}</span><div><Button disabled={effectivePage === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>上一页</Button><span>{effectivePage + 1} / {Math.max(1, Math.ceil(filtered.length / 8))}</span><Button disabled={(effectivePage + 1) * 8 >= filtered.length} onClick={() => setPage(p => p + 1)}>下一页</Button></div></div></Card>
-      {!selected && <div className="two-col chart-detail"><Card title="历史走势"><div className="card-inner"><Empty/></div></Card><Card title="数据档案"><div className="card-inner"><Empty/></div></Card></div>}
-      {selected && <div className="two-col chart-detail"><Card title={`${selected.name} · 历史走势`} subtitle={`${selected.symbol} · ${selected.currency} · 合成日频数据`} action={<select aria-label="查看资产" value={selected.id} onChange={e => app.setSelectedAsset(e.target.value)}>{assets.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}</select>}><div className="card-inner"><TimeChart labels={sliceDates(selected.prices, from, to).map(p => p.date)} series={[{ name: selected.name, values: sliceDates(selected.prices, from, to).map(p => p.close) }]} unit=""/></div></Card><Card title="数据档案" subtitle="统一数据模型 · UDM"><dl className="key-values"><div><dt>资产标识</dt><dd className="mono">{selected.id}</dd></div><div><dt>原始数据源</dt><dd>{state.sources.find(s => s.id === selected.source)?.name}</dd></div><div><dt>频率 / 版本</dt><dd>1d / mock-v1</dd></div><div><dt>记录数</dt><dd>{selected.prices.length} 个观测日</dd></div><div><dt>数据口径</dt><dd>未复权合成价格</dd></div><div><dt>最近可用时间</dt><dd>{SNAPSHOT} 15:00</dd></div></dl><div className="card-inner"><Button className="full-width" icon="branch" onClick={() => { app.setSelectedFeature('volatility20'); app.navigate('lineage'); }}>查看数据溯源</Button></div></Card></div>}
-    </>}
-    {tab === 'macro' && <Indicators/>}
-    {tab === 'calendar' && <EconomicCalendar/>}
-    {tab === 'news' && (user && !canWrite(user) ? <Empty title="研报与舆情需要研究权限"/> : <Documents/>)}
-    {tab === 'sources' && <ImportRecords/>}
-    {tab === 'sources' && state.imports.length > 0 && <><div className="section-toolbar"><span className="muted">多源适配器目录 · 所有连接状态均为演示</span><Button icon="refresh" onClick={app.refresh}>刷新目录</Button></div><Card className="table-card"><div className="table-scroll"><table className="data-table"><thead><tr><th>数据源</th><th>类别</th><th>频率</th><th className="numeric">样本记录</th><th>状态</th><th>更新时间</th><th>操作</th></tr></thead><tbody>{state.sources.map(s => <tr key={s.id}><td><strong>{s.name}</strong><small className="block mono muted">{s.id}</small></td><td><Badge>{s.type}</Badge></td><td>{s.frequency}</td><td className="numeric">{compactNumber(s.records)}</td><td><Badge dot tone={s.status === 'online' ? 'green' : s.status === 'delayed' ? 'amber' : 'neutral'}>{s.status === 'online' ? '已就绪' : s.status === 'delayed' ? '更新延迟' : '已暂停'}</Badge></td><td>{s.updatedAt}</td><td><div className="row-actions"><IconButton icon="file" label={`预览${s.name}`} onClick={() => { const file = state.imports.find(f => f.id === s.id); if (file) setPreview(file); else setSourceDetail(s.id); }}/><Toggle checked={s.status !== 'paused'} disabled={!canAdmin(user)} label={`启用${s.name}`} onChange={enabled => app.update(prev => ({ ...prev, sources: prev.sources.map(x => x.id === s.id ? { ...x, status: enabled ? 'online' : 'paused' } : x) }), `${enabled ? '启用' : '暂停'}演示数据源 ${s.name}`, 'admin')}/></div></td></tr>)}</tbody></table></div></Card><Notice>开关只模拟数据源生命周期，不会停止历史样本查询。导入的 CSV 仅保存在本浏览器的原始数据预览中，不会自动参与状态识别。</Notice></>}
-    {importOpen && <Modal title="导入本地 CSV 样本" wide onClose={() => setImportOpen(false)} footer={<><Button onClick={() => setImportOpen(false)}>取消</Button><Button variant="primary" disabled={!imported || !!importError} onClick={saveImport}>确认导入 {imported ? `${imported.rows.length} 行` : ''}</Button></>}><Notice>仅在本浏览器读取和保存，不上传到服务器。上限1MB / 2000行；表头不能为空或重复。</Notice><Field label="选择 CSV 文件"><input type="file" accept=".csv,text/csv" onChange={async e => { const f = e.target.files?.[0]; if (!f) return; setImportError(''); setImported(null); try { if (f.size > 1024 * 1024) throw new Error('文件超过1MB'); const csv = parseCsv(await f.text()); setImported({ id: uid('source-import'), name: f.name, ...csv, importedAt: new Date().toISOString() }); } catch (err) { setImportError(err instanceof Error ? err.message : '无法读取文件'); } }}/></Field><Button variant="ghost" icon="download" onClick={() => downloadCsv('sample-template.csv', ['asset_id', 'event_time', 'available_at', 'close', 'source'], [['demo-index', '2026-10-08', '2026-10-08T15:00:00+08:00', 100, 'local-demo'], ['demo-index', '2026-10-09', '2026-10-09T15:00:00+08:00', 102, 'local-demo']])}>下载导入模板</Button>{importError && <Notice tone="warning">{importError}</Notice>}{imported && <><p className="small muted">{imported.name} · {imported.rows.length} 行 · 前5行预览</p><div className="table-scroll"><table className="data-table"><thead><tr>{imported.headers.map(h => <th key={h}>{h}</th>)}</tr></thead><tbody>{imported.rows.slice(0, 5).map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>)}</tbody></table></div></>}</Modal>}
-    {preview && <Modal title={`原始数据 · ${preview.name}`} wide onClose={() => setPreview(null)} footer={<Button icon="download" onClick={() => downloadCsv(preview.name, preview.headers, preview.rows)}>导出此数据源</Button>}><p className="muted">共 {preview.rows.length} 行，最多展示前100行。未执行自动清洗或模型计算。</p><div className="table-scroll"><table className="data-table"><thead><tr>{preview.headers.map(h => <th key={h}>{h}</th>)}</tr></thead><tbody>{preview.rows.slice(0, 100).map((r, i) => <tr key={i}>{r.map((c, j) => <td key={j}>{c}</td>)}</tr>)}</tbody></table></div></Modal>}
-    {sourceDetail && <Modal title="适配器与统一数据模型" onClose={() => setSourceDetail(null)}><Notice>示例映射规则，未调用外部数据源。</Notice><pre className="code-block">{JSON.stringify({ source_id: sourceDetail, adapter: 'MockSourceAdapter', schema_version: 'udm.v1', fields: { instrument: 'asset_id', timestamp: 'event_time', publish_time: 'available_at', received_time: 'ingested_at', price: 'close' }, quality_flags: ['complete', 'consistent', 'timely'], storage: { raw: 'ODS / MinIO', standardized: 'DWD / ClickHouse' } }, null, 2)}</pre><Button icon="branch" onClick={() => { setSourceDetail(null); app.navigate('lineage'); }}>查看处理溯源</Button></Modal>}
-  </>;
+
+export default function MarketData(): React.ReactElement {
+  const [tab, setTab] = useState(selectedSection);
+
+  useEffect(() => {
+    const sync = () => setTab(selectedSection());
+    window.addEventListener('hashchange', sync);
+    return () => window.removeEventListener('hashchange', sync);
+  }, []);
+
+  function changeSection(next: string) {
+    setTab(next);
+    const query = new URLSearchParams(location.hash.split('?')[1] || '');
+    query.set('tab', next);
+    location.hash = `/data?${query}`;
+  }
+
+  return <div className="market-page">
+    <PageHead title="行情中心" />
+    <Tabs items={sections} value={tab} onChange={changeSection} />
+    <div className="market-section">
+      {tab === 'history' && <HistoricalQuotes />}
+      {tab === 'macro' && <Indicators />}
+      {tab === 'calendar' && <EconomicCalendar />}
+      {tab === 'news' && <Documents />}
+    </div>
+  </div>;
 }

@@ -1,118 +1,217 @@
-"""Browser interactions for the delivered portable build.
-Requires: pip install playwright + an installed Chromium.
-In locked render environments we inject the HTML using set_content and supply a
-Storage-compatible in-memory test double. No external sites or live APIs are used.
+"""UI regression checks using only empty API responses or explicit failures.
+
+No financial values, models, news, forecasts or example accounts are supplied.
+Run after npm run build:portable. Requires Playwright and Chromium.
+Set CHROMIUM_PATH or PREVIEW_BASE to use an existing browser/server.
 """
 from pathlib import Path
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+import json
+import os
+import re
+import threading
 from playwright.sync_api import sync_playwright, expect
-import os, json, re
+
 ROOT = Path(__file__).resolve().parents[1]
-results=[]
-with sync_playwright() as p:
-    browser=p.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH','/usr/bin/chromium'),headless=True,args=['--no-sandbox'])
-    page=browser.new_page(viewport={'width':1440,'height':1080},device_scale_factor=1)
-    page.set_default_timeout(3500)
-    errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
-    page.evaluate('''() => { const store = new Map(); Object.defineProperty(window,'localStorage',{configurable:true,value:{getItem:k=>store.get(k)??null,setItem:(k,v)=>store.set(k,String(v)),removeItem:k=>store.delete(k),clear:()=>store.clear()}}); }''')
-    page.set_content((ROOT/'RegimeLab-preview.html').read_text(),wait_until='load')
-    page.wait_for_timeout(300)
+ARTIFACTS = ROOT / 'artifacts'
+ARTIFACTS.mkdir(exist_ok=True)
+results = []
+
+class QuietHandler(SimpleHTTPRequestHandler):
+    def log_message(self, *args):
+        pass
+
+server = None
+base = os.environ.get('PREVIEW_BASE')
+if not base:
+    server = ThreadingHTTPServer(('127.0.0.1', 0), partial(QuietHandler, directory=str(ROOT)))
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    base = f'http://127.0.0.1:{server.server_port}/RegimeLab-preview.html'
+
+with sync_playwright() as pw:
+    browser = pw.chromium.launch(executable_path=os.environ.get('CHROMIUM_PATH', '/usr/bin/chromium'), headless=True, args=['--no-sandbox'])
+    context = browser.new_context(viewport={'width': 1440, 'height': 1024}, device_scale_factor=1)
+    context.add_init_script("""(() => {
+      localStorage.setItem('regimelab.workspace.v1', JSON.stringify({schema:1,
+        users:[{id:'old-user',name:'LEGACY_DEMO_ACCOUNT',active:true,role:'admin'}],
+        sessionUserId:'old-user',rules:[],alerts:[{id:'legacy-alert',title:'LEGACY_DEMO_ALERT'}],
+        checkpoints:[{id:'legacy-checkpoint'}], prefs:{positiveGreen:false,compact:false}}));
+    })();""")
+    page = context.new_page()
+    page.set_default_timeout(6000)
+    page_errors = []
+    requests = []
+    mode = {'value': 'empty'}
+    page.on('pageerror', lambda error: page_errors.append(str(error)))
+
+    def respond(route):
+        requests.append({'url': route.request.url, 'method': route.request.method})
+        if mode['value'] == 'error':
+            route.fulfill(status=503, content_type='application/json', body=json.dumps({'error': {'message': 'Service unavailable'}}))
+        elif '/stream/status' in route.request.url:
+            route.fulfill(status=200, content_type='application/json', body='{"ready":false}')
+        elif '/market/latest' in route.request.url:
+            route.fulfill(status=200, content_type='application/json', body='{}')
+        else:
+            route.fulfill(status=200, content_type='application/json', body='{"items":[],"next_cursor":""}')
+
+    page.route(re.compile(r'/(?:market-api|api)/'), respond)
+    page.goto(base + '#/overview')
+    expect(page.locator('h1')).to_have_text('市场总览')
+
     def run(name, fn):
         try:
-            fn();results.append({'name':name,'result':'PASS'});print('PASS',name)
-        except Exception as e:
-            results.append({'name':name,'result':'FAIL','error':str(e)[:1000]});print('FAIL',name,str(e)[:200]);page.keyboard.press('Escape')
+            fn()
+            results.append({'name': name, 'result': 'PASS'})
+            print('PASS', name)
+        except Exception as error:
+            results.append({'name': name, 'result': 'FAIL', 'error': str(error)[:1600]})
+            print('FAIL', name, str(error)[:300])
+            page.keyboard.press('Escape')
+
     def go(route):
-        page.keyboard.press('Escape');page.evaluate('(r)=>window.location.hash="/"+r',route);page.wait_for_timeout(130)
-    def tab(name):page.get_by_role('tab',name=re.compile(name)).click()
-    def role(label):
-        page.get_by_role('button',name='用户菜单').click();page.locator('.user-popover').get_by_role('button',name=label,exact=True).click();page.wait_for_timeout(100)
-    for route,title in [('overview','市场总览'),('data','市场数据'),('features','特征实验室'),('regimes','市场状态'),('alerts','预警中心'),('quality','数据质量'),('lineage','数据溯源'),('system','服务监控'),('api','API 工作台'),('settings','团队与设置')]:
-        def route_test(route=route,title=title):
-            go(route);expect(page.get_by_role('heading',name=title,exact=True)).to_be_visible();assert not page.evaluate('document.documentElement.scrollWidth>innerWidth')
-        run('page: '+route,route_test)
-    def all_tabs():
-        for route in ['data','features','regimes','alerts','quality','api','settings']:
-            go(route)
-            for i in range(page.get_by_role('tab').count()):
-                page.get_by_role('tab').nth(i).click();page.wait_for_timeout(70)
-                assert page.locator('h1').count()==1
-    run('all secondary tabs render',all_tabs)
-    def rule_create():
-        go('alerts');page.get_by_role('button',name='创建预警规则').click()
-        page.get_by_label('规则名称',exact=True).fill('浏览器验收规则')
-        page.get_by_label('阈值（%）',exact=True).fill('0')
-        page.get_by_role('button',name='保存规则',exact=True).click()
-        tab('规则管理');expect(page.get_by_role('heading',name='浏览器验收规则',exact=True)).to_be_visible()
-        before=json.loads(page.evaluate('localStorage.getItem("regimelab.demo.v1")'))
-        page.get_by_role('button',name='检测当前规则').click();page.wait_for_timeout(100)
-        after=json.loads(page.evaluate('localStorage.getItem("regimelab.demo.v1")'))
-        assert len(after['alerts'])>len(before['alerts'])
-        page.get_by_role('button',name='检测当前规则').click();page.wait_for_timeout(100)
-        again=json.loads(page.evaluate('localStorage.getItem("regimelab.demo.v1")'))
-        assert len(again['alerts'])==len(after['alerts'])
-    run('create rule, trigger alerts, cooldown deduplication',rule_create)
-    def process_alert():
-        go('alerts');tab('预警列表');page.locator('tbody').get_by_role('button',name='详情').first.click()
-        page.get_by_label('处理说明').fill('浏览器验收：已复核模拟数据。')
-        page.get_by_role('button',name='标记已处理',exact=True).click()
-        expect(page.get_by_role('dialog').get_by_text('已处理',exact=True)).to_be_visible()
         page.keyboard.press('Escape')
-    run('alert resolution and note',process_alert)
-    def backtest():
-        go('alerts');tab('样本回测');page.get_by_role('button',name=re.compile('运行.*回测|开始.*回测')).click();page.wait_for_timeout(650)
-        expect(page.get_by_text('有效评价样本',exact=True)).to_be_visible()
-    run('computed synthetic backtest',backtest)
-    def feature_create():
-        go('features');page.get_by_role('button',name='新建特征定义').click();page.get_by_label('特征名称').fill('浏览器验收特征');page.get_by_label('公式说明').fill('mean(close, 20) — 文档元数据');page.get_by_label('业务解释').fill('本地定义测试');page.get_by_role('button',name='保存定义').click();tab('特征目录');expect(page.locator('tbody').get_by_text('浏览器验收特征',exact=True)).to_be_visible()
-    run('feature definition CRUD create',feature_create)
-    def pca():
-        go('features');tab('PCA 降维');assert page.locator('svg').count()>15
-    run('PCA and covariance visualizations',pca)
-    def replay():
-        go('regimes');slider=page.get_by_label('回放日期进度');before=slider.input_value();slider.focus();page.keyboard.press('ArrowLeft');assert slider.input_value()!=before
-        page.locator('.heat-cell').first.click();expect(page.get_by_role('dialog')).to_be_visible();page.keyboard.press('Escape')
-    run('historical replay and heatmap detail',replay)
-    def api():
-        go('api');page.get_by_role('button',name='发送模拟请求').click();expect(page.locator('.response-block')).to_contain_text('requestId')
-        page.get_by_label('API路径').fill('/api/not-found');page.get_by_role('button',name='发送模拟请求').click();expect(page.locator('.response-block')).to_contain_text('NOT_FOUND')
-        tab('GraphQL');page.get_by_role('button',name='发送模拟请求').click();expect(page.locator('.response-block')).to_contain_text('unreadAlertCount')
-    run('REST 200 / 404 and GraphQL query',api)
-    def viewer():
-        role('观察员');go('data');expect(page.get_by_role('button',name='导入 CSV')).to_be_disabled();assert '6' in page.get_by_role('tab',name=re.compile('多资产行情')).inner_text()
-        go('alerts');expect(page.get_by_role('button',name='创建预警规则')).to_be_disabled()
-        go('settings');tab('团队成员');expect(page.get_by_text('此页面需要管理员权限',exact=True)).to_be_visible()
-    run('viewer UI and asset access restrictions',viewer)
-    def csv():
-        role('管理员');go('data');page.get_by_role('button',name='导入 CSV').click();page.locator('input[type=file]').set_input_files({'name':'browser-test.csv','mimeType':'text/csv','buffer':b'asset_id,close\ndemo,100\ndemo,101'})
-        expect(page.get_by_role('button',name=re.compile('确认导入 2 行'))).to_be_enabled();page.get_by_role('button',name=re.compile('确认导入 2 行')).click()
-        data=json.loads(page.evaluate('localStorage.getItem("regimelab.demo.v1")'));assert data['imports'][-1]['name']=='browser-test.csv' or data['imports'][0]['name']=='browser-test.csv'
-    run('administrator CSV parse and local import',csv)
-    def checkpoint():
-        go('system');before=json.loads(page.evaluate('localStorage.getItem("regimelab.demo.v1")'));page.get_by_role('button',name='模拟 Savepoint').click();page.wait_for_timeout(850);after=json.loads(page.evaluate('localStorage.getItem("regimelab.demo.v1")'));assert len(after['checkpoints'])==len(before['checkpoints'])+1
-    run('simulated savepoint record workflow',checkpoint)
+        page.evaluate('(r) => location.hash = "/" + r', route)
+        page.wait_for_timeout(180)
+
+    def empty_overview():
+        expect(page.locator('.load-track')).to_have_count(0)
+        assert page.locator('.benchmark,.performance-card,.market-state-card,.news-item').count() == 0
+        assert page.get_by_role('link', name='历史行情', exact=True).count() == 1
+        assert 'LEGACY_DEMO' not in page.locator('body').inner_text()
+        assert not page.get_by_role('button', name='用户菜单').count()
+    run('empty API: no financial placeholders or legacy demo state', empty_overview)
+
+    def route_checks():
+        for route, title in [('overview','市场总览'),('data','行情中心'),('features','市场研究'),('regimes','市场回放'),('quality','数据管理'),('lineage','数据溯源'),('api','API 访问'),('settings','显示设置')]:
+            go(route)
+            expect(page.locator('h1')).to_have_text(title)
+            assert not page.evaluate('document.documentElement.scrollWidth > innerWidth'), route
+            assert not page.locator('tbody tr,.highcharts-container,.replay-main-card,.stat-card').count(), route
+    run('all live routes render with empty contracts and no empty data tables', route_checks)
+
+    def tools_navigation():
+        page.get_by_role('button', name='工具', exact=True).click()
+        menu = page.locator('#tools-navigation')
+        expect(menu).to_be_visible()
+        assert menu.get_by_role('link').count() == 4
+        menu.get_by_role('link', name='数据管理', exact=True).click()
+        expect(page.locator('h1')).to_have_text('数据管理')
+        expect(menu).to_have_count(0)
+    run('tools navigation exposes actual data capabilities', tools_navigation)
+
+    def global_search():
+        page.keyboard.press('Control+k')
+        search = page.get_by_role('textbox', name='资产名称、代码或功能')
+        expect(search).to_be_focused()
+        search.fill('经济日历')
+        page.get_by_role('dialog').get_by_role('link', name='经济日历', exact=True).click()
+        expect(page.get_by_role('tab', name='经济日历', exact=True)).to_have_attribute('aria-selected','true')
+        expect(page.get_by_role('dialog')).to_have_count(0)
+    run('keyboard global search deep-links to economic calendar', global_search)
+
+    def keyboard_tabs():
+        go('data?tab=history')
+        page.get_by_role('tab', name='行情', exact=True).focus()
+        page.keyboard.press('ArrowRight')
+        expect(page.get_by_role('tab', name='宏观', exact=True)).to_be_focused()
+        expect(page.get_by_role('tab', name='宏观', exact=True)).to_have_attribute('aria-selected','true')
+        assert 'tab=macro' in page.url
+        for label in ['经济日历','资讯研报','行情']:
+            page.get_by_role('tab', name=label, exact=True).click()
+            page.wait_for_timeout(160)
+            assert page.locator('tbody tr,.highcharts-container,.macro-series,.document-list-item').count() == 0
+    run('tabs support arrow keys and stable deep links', keyboard_tabs)
+
     def preferences():
-        go('settings');page.get_by_role('switch',name='紧凑表格').click();assert 'compact-density' in page.locator('body').get_attribute('class');page.get_by_role('switch',name='紧凑表格').click()
-    run('preferences applied and serialized',preferences)
-    def customize():
-        go('overview');page.get_by_role('button',name='自定义看板').click();page.get_by_role('dialog').get_by_label('最新预警').uncheck();page.get_by_role('button',name='保存看板').click();assert page.get_by_role('heading',name='最新预警',exact=True).count()==0
-        page.get_by_role('button',name='自定义看板').click();page.get_by_role('button',name='恢复默认布局').click();page.get_by_role('button',name='保存看板').click()
-    run('custom dashboard hide and restore',customize)
-    def login():
-        page.get_by_role('button',name='用户菜单').click();page.get_by_role('button',name='退出演示账号').click();expect(page.get_by_role('heading',name='欢迎回到研境')).to_be_visible();page.get_by_role('button',name='分析师',exact=True).click();expect(page.get_by_role('heading',name='市场总览',exact=True)).to_be_visible()
-    run('logout and demo login',login)
+        go('settings')
+        page.get_by_role('button', name=re.compile('绿涨红跌')).click()
+        page.get_by_role('switch', name='紧凑布局').click()
+        assert page.locator('body').evaluate("el => el.classList.contains('compact-density')")
+        saved = json.loads(page.evaluate("localStorage.getItem('fintech.preferences.v2')"))
+        assert saved['prefs']['compact'] and saved['prefs']['positiveGreen']
+        assert all(key not in saved for key in ['users','sessionUserId','alerts','rules','checkpoints','imports'])
+        page.reload()
+        expect(page.get_by_role('switch', name='紧凑布局')).to_have_attribute('aria-checked','true')
+        page.get_by_role('button', name='恢复默认显示', exact=True).click()
+        dialog = page.get_by_role('dialog')
+        expect(dialog).to_contain_text('红涨绿跌')
+        dialog.get_by_role('button', name='取消', exact=True).click()
+        expect(page.get_by_role('switch', name='紧凑布局')).to_have_attribute('aria-checked','true')
+        page.get_by_role('button', name='恢复默认显示', exact=True).click()
+        page.get_by_role('dialog').get_by_role('button', name='恢复默认', exact=True).click()
+        expect(page.get_by_role('switch', name='紧凑布局')).to_have_attribute('aria-checked','false')
+    run('display preferences persist; reset consequences and cancellation work', preferences)
+
+    def api_write_guard():
+        go('api')
+        page.get_by_label('HTTP 方法').select_option('DELETE')
+        before = sum(request['method'] != 'GET' for request in requests)
+        page.get_by_role('button', name='发送请求', exact=True).click()
+        expect(page.get_by_role('dialog')).to_contain_text('可能无法撤销')
+        assert sum(request['method'] != 'GET' for request in requests) == before
+        page.get_by_role('dialog').get_by_role('button', name='取消', exact=True).click()
+        assert sum(request['method'] != 'GET' for request in requests) == before
+    run('API mutations require a concrete confirmation before any request', api_write_guard)
+
+    def api_empty_response():
+        page.get_by_label('HTTP 方法').select_option('GET')
+        page.get_by_role('button', name='发送请求', exact=True).click()
+        expect(page.get_by_text('HTTP 200', exact=True)).to_be_visible()
+        assert page.get_by_role('heading', name='响应', exact=True).count() == 0
+    run('empty API response hides output card while retaining real status', api_empty_response)
+
+    def error_retry():
+        mode['value'] = 'error'
+        go('overview')
+        expect(page.locator('.load-error')).to_be_visible()
+        expect(page.locator('.load-track')).to_have_count(0)
+        assert page.locator('.benchmark,.performance-card,.market-state-card,.news-item').count() == 0
+        before = len(requests)
+        page.get_by_role('button', name='重试', exact=True).click()
+        expect(page.locator('.load-track')).to_have_count(0)
+        assert len(requests) > before
+        for route in ['data','features','regimes','quality']:
+            go(route)
+            expect(page.get_by_role('alert').first).to_be_visible()
+            assert not page.locator('tbody tr,.highcharts-container,.stat-card').count()
+        mode['value'] = 'empty'
+    run('failed APIs have retry controls and never synthesize output', error_retry)
+
     def mobile():
-        page.set_viewport_size({'width':390,'height':844});page.wait_for_timeout(150)
-        for route in ['overview','data','features','regimes','alerts','quality','lineage','system','api','settings']:
-            go(route);assert not page.evaluate('document.documentElement.scrollWidth>innerWidth'),route
-        go('overview');page.get_by_role('button',name='展开导航').click();expect(page.get_by_role('navigation',name='主要导航')).to_be_visible();page.get_by_role('button',name='关闭导航').click()
-        page.screenshot(path=str(ROOT/'artifacts/mobile.png'),full_page=True)
-    run('mobile 390px layout and navigation',mobile)
-    page.set_viewport_size({'width':1440,'height':1080});go('overview');page.wait_for_timeout(4200)
-    page.screenshot(path=str(ROOT/'artifacts/overview.png'),full_page=True)
-    go('regimes');page.screenshot(path=str(ROOT/'artifacts/regimes.png'),full_page=True)
-    go('features');tab('PCA 降维');page.screenshot(path=str(ROOT/'artifacts/features.png'),full_page=True)
-    results.append({'name':'no browser runtime errors','result':'PASS' if not errors else 'FAIL','errors':errors})
-    (ROOT/'artifacts/browser-tests.json').write_text(json.dumps(results,ensure_ascii=False,indent=2))
-    print('TOTAL',len(results),'PASS',sum(x['result']=='PASS' for x in results));print('ERRORS',errors)
-    page.close()
+        for width in [375,390,768,1280,1440]:
+            page.set_viewport_size({'width': width, 'height': 900})
+            for route in ['overview','data','data?tab=macro','data?tab=calendar','data?tab=news','features','regimes','quality','lineage','api','settings']:
+                go(route)
+                assert not page.evaluate('document.documentElement.scrollWidth > innerWidth'), (width,route)
+        page.set_viewport_size({'width':390,'height':844})
+        go('overview')
+        page.get_by_role('button', name='展开导航', exact=True).click()
+        nav = page.get_by_role('navigation', name='移动导航')
+        expect(nav).to_be_visible()
+        nav.get_by_role('link', name='行情中心', exact=True).click()
+        expect(nav).to_have_count(0)
+        expect(page.locator('h1')).to_have_text('行情中心')
+        go('overview')
+        page.screenshot(path=str(ARTIFACTS/'mobile.png'), full_page=True)
+        page.set_viewport_size({'width':1440,'height':1024})
+        page.screenshot(path=str(ARTIFACTS/'overview.png'), full_page=True)
+        go('settings');page.screenshot(path=str(ARTIFACTS/'settings.png'), full_page=True)
+        go('api');page.screenshot(path=str(ARTIFACTS/'api.png'), full_page=True)
+    run('five viewport sizes and mobile menu navigation', mobile)
+
+    def real_only():
+        assert requests
+        assert all('dataset=demo' not in request['url'] for request in requests)
+        assert not page_errors, page_errors
+        assert 'data/mock.ts' not in (ROOT/'RegimeLab-preview.html').read_text()
+        assert '.research-controls{' in (ROOT/'RegimeLab-preview.html').read_text()
+        assert '.api-console-layout{' in (ROOT/'RegimeLab-preview.html').read_text()
+    run('no demo requests, complete portable styles, no runtime exceptions', real_only)
+    (ROOT/'docs/browser-results.json').write_text(json.dumps(results,ensure_ascii=False,indent=2)+'\n')
     browser.close()
+if server:
+    server.shutdown()
+print('TOTAL', len(results), 'PASS', sum(item['result']=='PASS' for item in results))
+raise SystemExit(0 if all(item['result']=='PASS' for item in results) else 1)

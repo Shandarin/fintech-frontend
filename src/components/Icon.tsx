@@ -1,5 +1,6 @@
 import React from 'react';
 const paths: Record<string, React.ReactNode> = {
+  menu: <path d="M4 6h16M4 12h16M4 18h16"/>,
   grid: <><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></>,
   database: <><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v7c0 4 16 4 16 0V5M4 12v7c0 4 16 4 16 0v-7"/></>,
   chart: <><path d="M4 3v17h17M7 14l4-5 4 3 6-8"/></>,

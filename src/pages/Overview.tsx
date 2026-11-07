@@ -1,81 +1,118 @@
-import React, { useEffect, useState } from 'react';
-import { useApp } from '../state/AppContext';
-import { Button, Card, IconButton, Modal, PageHead, Stat } from '../components/ui';
-import { TimeChart } from '../components/charts';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Button, Card, Info, PageHead } from '../components/ui';
+import { Sparkline, TimeChart, CHART_COLORS } from '../components/charts';
 import { Icon } from '../components/Icon';
 import { downloadFile } from '../lib/files';
 import { pages } from '../services/pagedApi';
 import { requestJson } from '../services/httpClient';
+import { DocDetail } from './MarketResearch';
 
-const WIDGETS = [{id:'trend',title:'跨资产走势',width:'wide'}, {id:'state',title:'沪深300 回放状态',width:'narrow'},
-  {id:'heatmap',title:'状态变化',width:'wide'}, {id:'alerts',title:'最新预警',width:'narrow'}];
-const benchmarks = [{name:'沪深300',group:'equity'}, {name:'标普500',group:'equity'}, {name:'COMEX黄金期货',group:'commodity'}, {name:'美元指数DXY',group:'fx'}];
-type Price = {business_date:string; value:string; daily_return:number | null};
-type Prediction = {business_date:string; asset_id:string; state_id:number; state_name:string; probabilities:number[]};
-const palette = ['#366dbc','#b88716','#9653a5'];
+const benchmarks = ['沪深300', '标普500', 'COMEX黄金期货', '美元指数DXY'];
+const quickLinks = [
+  { title: '历史行情', icon: 'chart', href: '#/data?tab=history', color: 'orange' },
+  { title: '宏观指标', icon: 'globe', href: '#/data?tab=macro', color: 'olive' },
+  { title: '经济日历', icon: 'calendar', href: '#/data?tab=calendar', color: 'gold' },
+  { title: '资讯研报', icon: 'book', href: '#/data?tab=news', color: 'plum' },
+];
+type Price = { business_date: string; value: string; daily_return: number | null };
+type Prediction = { business_date: string; asset_id: string; state_id: number; state_name: string; probabilities: number[] };
+type Document = { record_id: string; title: string; business_date: string; date_known: number; metric: string };
+const documentTypes: Record<string, string> = { news: '新闻', social: '讨论', markdown: '资金摘要', wechat_index: '公众号', pdf: '研报' };
+const validPrice = (row: Price) => row && typeof row.business_date === 'string' && row.value != null && String(row.value).trim() !== '' && Number.isFinite(Number(row.value));
+const formatted = (value: string | number) => Number(value).toLocaleString('zh-CN', { maximumFractionDigits: 2 });
+const changeLabel = (value: number) => `${value > 0 ? '+' : ''}${(value * 100).toFixed(2)}%`;
 
 export default function Overview(): React.ReactElement {
-  const app = useApp();
-  const {state,user} = app;
-  const [customize,setCustomize] = useState(false), [widgets,setWidgets] = useState(state.widgets), [drag,setDrag] = useState<string|null>(null);
-  const [quotes,setQuotes] = useState<Record<string,Price[]>>({});
-  const [errors,setErrors] = useState<Record<string,string>>({});
-  const [history,setHistory] = useState<Prediction[]>();
-  const [modelError,setModelError] = useState('');
-  const allowed = benchmarks.filter(b => !user || user.allowedClasses.some(c => c === b.group));
+  const [revision, setRevision] = useState(0);
+  const [quotes, setQuotes] = useState<Record<string, Price[]>>({});
+  const [history, setHistory] = useState<Prediction[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [errors, setErrors] = useState<string[]>([]);
+  const [pending, setPending] = useState(0);
+  const [selectedDocument, setSelectedDocument] = useState('');
+  const [period, setPeriod] = useState(90);
   useEffect(() => {
     const c = new AbortController();
-    async function load(name:string) {
-      const latest = await requestJson('/market-api/v1','market/latest?' + new URLSearchParams({asset_id:name,dataset:'main'}),{signal:c.signal});
+    setQuotes({}); setHistory([]); setDocuments([]); setErrors([]); setPending(benchmarks.length + 2);
+    const completed = () => { if (!c.signal.aborted) setPending(v => Math.max(0, v - 1)); };
+    const failed = (name: string) => { if (!c.signal.aborted) setErrors(previous => [...previous, name]); };
+    async function load(name: string) {
+      const latest = await requestJson('/market-api/v1', 'market/latest?' + new URLSearchParams({ asset_id: name, dataset: 'main' }), { signal: c.signal });
       if (latest.status !== 200) throw new Error('行情读取失败');
-      const end = (latest.body as {business_date?:string}).business_date;
+      const end = (latest.body as { business_date?: string } | null)?.business_date;
       if (!end) return [];
       const start = new Date(end + 'T00:00:00Z');
-      start.setUTCDate(start.getUTCDate()-90);
-      return pages<Price>('market-api/v1/market/daily-return',c.signal,{asset_id:name,dataset:'main',from:start.toISOString().slice(0,10),to:end});
+      if (!Number.isFinite(start.getTime())) throw new Error('行情日期无效');
+      start.setUTCDate(start.getUTCDate() - 90);
+      const rows = await pages<Price>('market-api/v1/market/daily-return', c.signal, { asset_id: name, dataset: 'main', from: start.toISOString().slice(0, 10), to: end });
+      return rows.filter(validPrice).sort((a, b) => a.business_date.localeCompare(b.business_date));
     }
-    for (const {name} of allowed) load(name).then(rows => {
-      if (!c.signal.aborted) setQuotes(old => ({...old,[name]:rows}));
-    }).catch(() => { if (!c.signal.aborted) setErrors(old => ({...old,[name]:'行情读取失败'})); });
-    return () => c.abort();
-  }, [user]);
-  useEffect(() => {
-    const c = new AbortController();
-    async function load() {
-      const [models,sessions] = await Promise.all([
-        pages<{model_id:string;asset_id:string}>('api/v1/models',c.signal),
-        pages<{model_id:string;session_id:string;status:string}>('api/v1/stream/sessions',c.signal),
+    for (const name of benchmarks) {
+      load(name).then(rows => { if (!c.signal.aborted) setQuotes(old => ({ ...old, [name]: rows })); }).catch(() => failed(name)).finally(completed);
+    }
+    async function loadHistory() {
+      const [models, sessions] = await Promise.all([
+        pages<{ model_id: string; asset_id: string }>('api/v1/models', c.signal),
+        pages<{ model_id: string; session_id: string; status: string }>('api/v1/stream/sessions', c.signal),
       ]);
       const session = sessions.find(s => s.status === 'COMPLETED' && models.some(m => m.asset_id === '沪深300' && m.model_id === s.model_id));
-      return session ? pages<Prediction>('api/v1/regimes',c.signal,{session_id:session.session_id}) : [];
+      return session ? pages<Prediction>('api/v1/regimes', c.signal, { session_id: session.session_id }) : [];
     }
-    load().then(rows => { if (!c.signal.aborted) setHistory(rows); }).catch(() => { if (!c.signal.aborted) setModelError('回放数据读取失败'); });
+    loadHistory().then(rows => {
+      if (!c.signal.aborted) setHistory(rows.filter(row => row?.business_date && row.state_name && Number.isInteger(row.state_id) && row.state_id >= 0).sort((a, b) => a.business_date.localeCompare(b.business_date)));
+    }).catch(() => failed('市场状态')).finally(completed);
+    requestJson('/market-api/v1', 'documents?' + new URLSearchParams({ dataset: 'main', limit: '6', cursor: '' }), { signal: c.signal }).then(response => {
+      const body = response.body as { items?: Document[] };
+      if (response.status !== 200 || !Array.isArray(body?.items)) throw new Error('资讯读取失败');
+      if (!c.signal.aborted) setDocuments(body.items.filter(row => row.record_id && row.title));
+    }).catch(() => failed('资讯研报')).finally(completed);
     return () => c.abort();
-  }, []);
-  const latest = history?.at(-1);
-  const pending = modelError || (history ? '暂无已完成的回放' : '正在读取回放…');
-  const comparable = allowed.filter(b => quotes[b.name]?.length).map(b => ({name:b.name, byDay:new Map(quotes[b.name].map(r => [r.business_date,Number(r.value)]))}));
-  const days = comparable.length ? [...comparable[0].byDay.keys()].filter(d => comparable.every(b => b.byDay.has(d))) : [];
-  const series = comparable.map(b => ({name:b.name,values:days.map(d => (b.byDay.get(d)! / b.byDay.get(days[0])! - 1)*100)}));
-  const alerts = state.alerts.filter(a => a.status !== 'resolved');
-  const exportReport = () => downloadFile('市场总览.json',JSON.stringify({quotes:Object.fromEntries(allowed.map(b => [b.name,quotes[b.name]?.at(-1)])),replay:latest,alerts},null,2),'application/json');
-  const reorder = (id: string, target: string) => { const next = [...widgets]; const fromIndex = next.indexOf(id), targetIndex = next.indexOf(target); if (fromIndex < 0 || targetIndex < 0) return; next.splice(fromIndex, 1); next.splice(targetIndex, 0, id); setWidgets(next); };
-  const content = (id:string) => {
-    if (id === 'trend') return <Card title="跨资产走势" subtitle="近 90 天 · 以首个共同交易日为基准的累计收益率"><div className="card-inner">
-      {days.length ? <><p>{series.map(s => s.name).join(' · ')}</p><TimeChart labels={days} series={series}/></> : <p>{allowed.every(b => errors[b.name] || quotes[b.name]) ? '暂无可比较的行情' : '正在读取行情…'}</p>}</div></Card>;
-    if (id === 'state') return <Card title="沪深300 回放状态" action={<Button onClick={() => app.navigate('regimes')}>查看回放</Button>}><div className="card-inner">
-      {latest ? <><h2>{latest.state_name}</h2><p>{latest.business_date} · 状态归属概率 {(latest.probabilities[latest.state_id]*100).toFixed(1)}%</p></> : <p>{pending}</p>}</div></Card>;
-    if (id === 'heatmap') return <Card title="沪深300 状态变化"><div className="card-inner">{history?.length ? <>
-      <p>{history[0].business_date} 至 {latest!.business_date} · {history.length} 个交易日</p>
-      <div style={{display:'flex',gap:2}}>{history.map(r => <span key={r.business_date} title={r.business_date+' · '+r.state_name} style={{flex:1,height:22,background:palette[r.state_id]}}/>)}</div>
-      <p>{Array.from(new Map(history.map(r => [r.state_id,r.state_name]))).map(([id,name]) => <span key={id} style={{marginRight:14}}><b style={{color:palette[id]}}>● </b>{name}</span>)}</p></> : <p>{pending}</p>}</div></Card>;
-    if (id === 'alerts') return <Card title="最新预警"><div className="card-inner">{alerts.length ? alerts.slice(0,3).map(a => <Button key={a.id} onClick={() => app.openAlert(a.id)}>{a.title}</Button>) : '暂无待处理预警'}</div></Card>;
-    return null;
-  };
-  return <><PageHead title="市场总览" actions={<><Button onClick={() => {setWidgets(state.widgets);setCustomize(true);}}>自定义看板</Button><Button onClick={exportReport}>导出快照</Button></>}/>
-    <div className="market-stats">{allowed.map(b => { const last=quotes[b.name]?.at(-1); return <Stat key={b.name} label={b.name} value={last ? Number(last.value).toLocaleString('zh-CN',{maximumFractionDigits:2}) : '—'} detail={last ? last.business_date + (last.daily_return != null ? ' · 日收益率 '+(last.daily_return*100).toFixed(2)+'%' : '') : errors[b.name] || (quotes[b.name] ? '暂无行情' : '读取中…')}/>; })}</div>
-    <div className="dashboard-grid">{state.widgets.map(id => <div key={id} className={'widget widget-'+(WIDGETS.find(w=>w.id===id)?.width || 'wide')}>{content(id)}</div>)}</div>
-    {customize && <Modal title="让看板更适合你的研究" onClose={() => setCustomize(false)} footer={<><Button onClick={() => setWidgets(WIDGETS.map(w => w.id))}>恢复默认布局</Button><Button variant="primary" onClick={() => { app.update(s => ({ ...s, widgets }), '调整个人看板', 'self'); setCustomize(false); app.notify('看板布局已保存'); }}>保存看板</Button></>}><p className="muted">勾选需要的组件；拖动已选组件调整顺序，也可以使用上下箭头。</p><div className="widget-options">{[...widgets, ...WIDGETS.map(w => w.id).filter(id => !widgets.includes(id))].map(id => <div key={id} className={`widget-option ${drag === id ? 'dragging' : ''}`} draggable={widgets.includes(id)} onDragStart={() => setDrag(id)} onDragEnd={() => setDrag(null)} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); if (drag) reorder(drag, id); setDrag(null); }}><Icon name="grip" size={16}/><label><input type="checkbox" checked={widgets.includes(id)} onChange={e => setWidgets(w => e.target.checked ? [...w, id] : w.filter(x => x !== id))}/>{WIDGETS.find(w => w.id === id)?.title}</label><IconButton icon="arrowup" label="向上移动" disabled={!widgets.includes(id) || widgets.indexOf(id) === 0} onClick={() => reorder(id, widgets[widgets.indexOf(id) - 1])}/><IconButton icon="arrowdown" label="向下移动" disabled={!widgets.includes(id) || widgets.indexOf(id) === widgets.length - 1} onClick={() => reorder(id, widgets[widgets.indexOf(id) + 1])}/></div>)}</div><p className="small muted">布局只保存在当前浏览器，正式接入后可保存到用户配置服务。</p></Modal>}
+  }, [revision]);
+  const available = benchmarks.filter(name => quotes[name]?.length);
+  const chart = useMemo(() => {
+    const comparable = benchmarks.filter(name => quotes[name]?.length).map((name, i) => ({ name, color: CHART_COLORS[i], byDay: new Map(quotes[name].map(row => [row.business_date, Number(row.value)])) }));
+    const allDays = comparable.length ? [...comparable[0].byDay.keys()].filter(day => comparable.every(series => series.byDay.has(day))).sort() : [];
+    const end = allDays.at(-1);
+    const start = end ? new Date(end + 'T00:00:00Z') : undefined;
+    start?.setUTCDate(start.getUTCDate() - period);
+    const days = start ? allDays.filter(day => day >= start.toISOString().slice(0, 10)) : [];
+    const series = days.length ? comparable.filter(series => series.byDay.get(days[0]) !== 0).map(series => ({ name: series.name, color: series.color, values: days.map(day => (series.byDay.get(day)! / series.byDay.get(days[0])! - 1) * 100) })) : [];
+    return { days, series };
+  }, [quotes, period]);
+  const latest = history.at(-1);
+  const probability = latest?.probabilities?.[latest.state_id];
+  const hasProbability = typeof probability === 'number' && Number.isFinite(probability) && probability >= 0 && probability <= 1;
+  const hasData = available.length > 0 || history.length > 0 || documents.length > 0;
+  const exportReport = () => downloadFile('FinTech-市场快照.json', JSON.stringify({ quotes: Object.fromEntries(available.map(name => [name, quotes[name].at(-1)])), ...(latest ? { replay: latest } : {}), ...(documents.length ? { documents } : {}) }, null, 2), 'application/json');
+  const timestamp = available.map(name => quotes[name].at(-1)!.business_date).sort().at(-1);
+  return <>
+    <div className="overview-heading"><div><PageHead title="市场总览"/></div><div className="head-actions">{hasData && <Button icon="download" onClick={exportReport}>导出快照</Button>}<a className="btn btn-primary" href="#/data?tab=history">查看行情<Icon name="arrow" size={16}/></a></div></div>
+    <nav className="market-shortcuts" aria-label="市场快捷入口">{quickLinks.map(link => <a key={link.title} href={link.href}><span className={`shortcut-icon shortcut-${link.color}`}><Icon name={link.icon} size={23}/></span><strong>{link.title}</strong><Icon name="arrow" size={17}/></a>)}</nav>
+    {pending > 0 && <div className="load-track" role="status" aria-label="正在获取市场数据"><span/></div>}
+    {errors.length > 0 && <div className="load-error" role="status"><Icon name="info" size={16}/><span>{hasData ? '部分数据暂时无法加载' : '数据暂时无法加载'}</span><Info label="查看未加载的数据">{Array.from(new Set(errors)).join('、')}</Info><Button variant="ghost" icon="refresh" onClick={() => setRevision(v => v + 1)} busy={pending > 0}>重试</Button></div>}
+    {available.length > 0 && <section className="benchmark-section" aria-label="主要市场指数">
+      <div className="section-heading"><h2>主要市场</h2>{timestamp && <time dateTime={timestamp}>{timestamp}</time>}</div>
+      <div className="benchmark-strip">{available.map(name => {
+        const rows = quotes[name], last = rows.at(-1)!;
+        const hasChange = typeof last.daily_return === 'number' && Number.isFinite(last.daily_return);
+        return <a className="benchmark" href={`#/data?tab=history&asset=${encodeURIComponent(name)}`} key={name}>
+          <span className="benchmark-name">{name}<Icon name="chevron" size={14}/></span><div className="benchmark-value"><strong>{formatted(last.value)}</strong>{rows.length > 1 && <Sparkline values={rows.map(row => Number(row.value))} positive={hasChange ? last.daily_return! >= 0 : Number(last.value) >= Number(rows[0].value)}/>}</div>
+          <div className="benchmark-meta">{hasChange && <span className={last.daily_return! > 0 ? 'positive' : last.daily_return! < 0 ? 'negative' : ''}>{changeLabel(last.daily_return!)}</span>}<time dateTime={last.business_date}>{last.business_date}</time></div>
+        </a>;
+      })}</div>
+    </section>}
+    {(chart.series.length > 0 || latest) && <div className={`overview-grid ${!chart.series.length || !latest ? 'overview-grid-single' : ''}`}>
+      {chart.series.length > 0 && <Card title="市场表现" subtitle="以所选区间首个共同交易日为基准，比较各资产的累计收益率。" className="performance-card" action={<div className="segments" aria-label="走势区间">{[{ value: 30, label: '1个月' }, { value: 90, label: '3个月' }].map(p => <button key={p.value} type="button" className={period === p.value ? 'active' : ''} aria-pressed={period === p.value} onClick={() => setPeriod(p.value)}>{p.label}</button>)}</div>}>
+        <div className="card-inner"><div className="chart-legend">{chart.series.map(series => <span key={series.name}><i style={{ background: series.color }}/>{series.name}</span>)}</div><TimeChart labels={chart.days} series={chart.series} height={300}/></div>
+      </Card>}
+      {latest && <Card title="沪深300 市场状态" className="market-state-card" action={<Info label="市场状态来源">最近一次已完成回放的模型输出，{latest.business_date}。</Info>}><div className="card-inner"><time dateTime={latest.business_date}>{latest.business_date}</time><h2 className="current-state">{latest.state_name}</h2>{hasProbability && <div className="state-confidence"><span>状态归属概率</span><strong>{(probability * 100).toFixed(1)}<small>%</small></strong><div className="probability-track"><i style={{ width: `${Math.max(0, Math.min(100, probability * 100))}%` }}/></div></div>}<div className="state-timeline" aria-label="历史状态变化">{history.map(row => <span key={row.business_date} title={`${row.business_date} · ${row.state_name}`} style={{ background: CHART_COLORS[row.state_id % CHART_COLORS.length] }}/>)}</div><a className="text-link" href="#/regimes">查看回放<Icon name="arrow" size={16}/></a></div></Card>}
+    </div>}
+    {documents.length > 0 && <section className="home-news"><div className="section-heading"><h2>最新资讯</h2><a className="text-link" href="#/data?tab=news">全部资讯<Icon name="arrow" size={15}/></a></div><div className="home-news-grid">{documents.map((doc, i) => <button type="button" key={doc.record_id} className={i === 0 ? 'news-item news-item-lead' : 'news-item'} onClick={() => setSelectedDocument(doc.record_id)}><div className="news-meta"><span>{documentTypes[doc.metric] || doc.metric}</span>{!!doc.date_known && <time dateTime={doc.business_date}>{doc.business_date}</time>}</div><h3>{doc.title}</h3><Icon name="arrow" size={18}/></button>)}</div></section>}
+    <section className="research-directory"><div className="section-heading"><h2>研究与工具</h2></div><div className="directory-grid">
+      <a href="#/features" className="directory-feature"><span className="directory-icon"><Icon name="activity" size={28}/></span><strong>市场研究</strong><span className="directory-action">查看特征<Icon name="arrow" size={16}/></span></a>
+      <a href="#/regimes" className="directory-feature"><span className="directory-icon"><Icon name="play" size={28}/></span><strong>历史回放</strong><span className="directory-action">打开回放<Icon name="arrow" size={16}/></span></a>
+      <div className="directory-tools"><a href="#/quality"><Icon name="database" size={19}/><span>数据管理</span><Icon name="chevron" size={15}/></a><a href="#/lineage"><Icon name="branch" size={19}/><span>数据溯源</span><Icon name="chevron" size={15}/></a><a href="#/api"><Icon name="code" size={19}/><span>API 访问</span><Icon name="chevron" size={15}/></a></div>
+    </div></section>
+    {selectedDocument && <DocDetail id={selectedDocument} onClose={() => setSelectedDocument('')}/>}
   </>;
 }
-

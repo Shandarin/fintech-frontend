@@ -1,16 +1,15 @@
-# RegimeLab frontend conventions
+# FinTech frontend conventions
 
-Independent frontend repository; do not introduce backend services here.
-- React + TypeScript + Vite; no UI framework, chart dependency or external font request.
-- `src/data/mock.ts` is synthetic data, never label it as live market data.
-- `src/lib/analytics.ts` contains pure, tested local computations.
-- `src/state/AppContext.tsx` owns mock writes, roles, audit, persistence and demo events.
-- `src/services/mockApi.ts` is a local API simulator, NOT a real HTTP/GraphQL server.
-- Real requests must report errors. Never silently replace a failed real response with mock data.
-- Do not put tokens or secrets in `VITE_` variables or local mock settings.
-- Heuristic regime scores are NOT calibrated probabilities or real GMM/HMM inference.
-- Preserve keyboard navigation, modal focus, responsive layouts and visible mock notices.
-- Frontend permissions are demonstration logic, never a production authorization boundary.
-- Build: npm run build. Tests: npm test. Portable preview: npm run build:portable.
-- After changing code, rebuild dist and RegimeLab-preview.html before release.
-- Check actual npm lockfile into the repository after a successful install; never invent one.
+Independent React + TypeScript + Vite frontend repository. Do not introduce backend services, a UI framework or external font requests. Keep the existing Highcharts dependency.
+
+- Use the existing `/market-api/v1`, `/api/v1` and `/ws/v1` contracts. Do not modify backend endpoints, response shapes or request bodies for a visual change.
+- Only real API records may appear in the UI. Do not fill missing responses with fixtures, fabricated prices, heuristic model labels, user accounts or simulated successes.
+- `src/data/mock.ts` and `src/services/mockApi.ts` are retained legacy test fixtures; never import them from the application entry graph.
+- A successful empty API result hides that data section. Keep navigation and useful input controls; show concise errors with retry for failed requests.
+- `src/state/AppContext.tsx` and `src/lib/storage.ts` manage display preferences and watchlist IDs. Never restore old synthetic accounts, alerts, sources, permissions or model results.
+- Keep the warm white / orange theme. Prefer hierarchy, spacing and clear action labels to explanatory microcopy. Put necessary supplementary information in accessible Info tooltips.
+- Preserve labels, keyboard tabs, modal focus and reduced-motion behavior. Irreversible API writes must retain clear confirmation.
+- Preserve real source/record references and numeric precision in downloads. Never interpret missing values as zero.
+- Test: `npm test`. Build: `npm run build:portable` followed by `npm run build` before release. Both generated deliverables must use the same final source and all page CSS.
+- The optional DOM suite is `tests/ui_contracts.cjs` (jsdom); browser checks are `tests/browser_smoke.py` (Playwright). Neither suite supplies synthetic financial records.
+- Keep the real npm lockfile; do not invent it. Report verification limitations honestly, especially when the backend or a browser is unavailable.

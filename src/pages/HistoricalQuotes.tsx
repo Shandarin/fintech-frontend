@@ -1,68 +1,188 @@
-import { AssetNews } from './MarketResearch';
-import React, { useEffect, useState } from 'react';
-import { Card, Notice } from '../components/ui';
+import React, { useEffect, useMemo, useState } from 'react';
+import { AssetNews, normaliseQuoteRows } from './MarketResearch';
+import { Button, Card, Field, IconButton, Notice } from '../components/ui';
+import { Icon } from '../components/Icon';
 import MarketChart, { type Quote } from '../components/MarketChart';
 import { pages } from '../services/pagedApi';
+import { downloadCsv } from '../lib/files';
 import { useApp } from '../state/AppContext';
 
 type AssetRow = { asset_id: string; metadata: string };
+type Asset = { id: string; group: string; metric: string };
 type Session = { session_id: string; start_date: string; end_date: string; result_count: number; model_id: string };
 type StateRow = { business_date: string; state_name: string; state_id: number };
 
-const groups: Record<string, string> = { 中国权益: 'equity', 全球权益: 'equity', 全球债券: 'bond', 外汇: 'fx', 大宗商品: 'commodity' };
+const classes: Record<string, string> = { 中国权益: 'equity', 全球权益: 'equity', 全球债券: 'bond', 外汇: 'fx', 大宗商品: 'commodity' };
+const assetFromLocation = () => new URLSearchParams(location.hash.split('?')[1] || '').get('asset') || '';
+const hasValue = (row: Quote) => row.value != null && String(row.value).trim() !== '' && Number.isFinite(Number(row.value));
+
 export default function HistoricalQuotes(): React.ReactElement {
-  const { user } = useApp();
-  const [catalog, setCatalog] = useState<AssetRow[]>([]);
-  const [asset, setAsset] = useState('沪深300');
-  const [quotes, setQuotes] = useState<Quote[]>([]);
-  const [error, setError] = useState(''), [catalogError, setCatalogError] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [sessions, setSessions] = useState<Session[]>([]), [session, setSession] = useState('');
-  const [states, setStates] = useState<StateRow[]>([]), [overlayError, setOverlayError] = useState('');
-  const assets = catalog.map(r => ({ id: r.asset_id, meta: JSON.parse(r.metadata) })).filter(({ meta }) =>
-    ['close','yield'].includes(meta.字段) && meta.大类 !== '示例' &&
-    (!user || user.allowedClasses.some(c => c === groups[meta.大类]) || (meta.大类 === '另类' && user?.role !== 'viewer')));
-  const current = assets.find(a => a.id === asset) || assets[0];
-  const id = current?.id, metric = current?.meta.字段;
+  const app = useApp();
+  const [catalog, setCatalog] = useState<Asset[]>([]);
+  const [asset, setAsset] = useState(assetFromLocation);
+  const [query, setQuery] = useState('');
+  const [group, setGroup] = useState('');
+  const [watchedOnly, setWatchedOnly] = useState(false);
+  const [catalogLoading, setCatalogLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState('');
+  const [quoteResult, setQuoteResult] = useState<{ asset: string; rows: Quote[] }>();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [reload, setReload] = useState(0);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [session, setSession] = useState('');
+  const [states, setStates] = useState<StateRow[]>([]);
+  const [overlayError, setOverlayError] = useState('');
+  const [overlayReload, setOverlayReload] = useState(0);
+  const assets = useMemo(() => catalog.filter(item => !app.user ||
+    app.user.allowedClasses.some(kind => kind === classes[item.group]) ||
+    (item.group === '另类' && app.user.role !== 'viewer')), [catalog, app.user]);
+  const current = asset ? assets.find(item => item.id === asset) : assets.find(item => item.id === '沪深300') || assets[0];
+  const id = current?.id;
+  const metric = current?.metric;
+  const groups = Array.from(new Set(assets.map(item => item.group).filter(Boolean)));
+  const filtered = assets.filter(item => (!group || item.group === group) &&
+    (!watchedOnly || app.state.watchlist.includes(item.id)) && item.id.toLowerCase().includes(query.trim().toLowerCase()));
+  const rows = quoteResult && quoteResult.asset === id ? quoteResult.rows : [];
+  const last = [...rows].reverse().find(hasValue);
+  const dailyReturn = last?.daily_return;
+  const change = dailyReturn != null && Number.isFinite(dailyReturn) ? dailyReturn * 100 : null;
+  const label = metric === 'yield' ? '债券收益率' : '收盘价';
+
   useEffect(() => {
-    const c = new AbortController();
-    pages<AssetRow>('market-api/v1/assets', c.signal).then(setCatalog).catch(e => { if (!c.signal.aborted) setCatalogError(e.message); });
-    return () => c.abort();
+    const sync = () => { setAsset(assetFromLocation()); setSession(''); };
+    window.addEventListener('hashchange', sync);
+    return () => window.removeEventListener('hashchange', sync);
   }, []);
+
   useEffect(() => {
-    if (!id) return;
-    const c = new AbortController();
-    setLoading(true); setError(''); setQuotes([]);
+    const controller = new AbortController();
+    setCatalogLoading(true);
+    setCatalogError('');
+    pages<AssetRow>('market-api/v1/assets', controller.signal).then(items => {
+      const next: Asset[] = [];
+      for (const item of items) {
+        const meta = JSON.parse(item.metadata) as Record<string, unknown>;
+        if (!meta || typeof meta !== 'object' || Array.isArray(meta) || typeof item.asset_id !== 'string' || !item.asset_id.trim()) throw new Error('Invalid asset metadata');
+        if (['close', 'yield'].includes(String(meta.字段)) && meta.大类 !== '示例') {
+          next.push({ id: item.asset_id, group: typeof meta.大类 === 'string' ? meta.大类 : '', metric: String(meta.字段) });
+        }
+      }
+      if (!controller.signal.aborted) { setCatalog(next); setGroup(value => next.some(item => item.group === value) ? value : ''); }
+    }).catch(() => {
+      if (!controller.signal.aborted) { setCatalog([]); setCatalogError('资产目录暂时无法加载'); }
+    }).finally(() => { if (!controller.signal.aborted) setCatalogLoading(false); });
+    return () => controller.abort();
+  }, [reload]);
+
+  useEffect(() => {
+    if (!id || !metric) { setLoading(false); setError(''); setQuoteResult(undefined); return; }
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    setQuoteResult(undefined);
     const path = metric === 'yield' ? 'market' : 'market/daily-return';
-    pages<Quote>('market-api/v1/' + path, c.signal, { dataset:'main', asset_id:id, metric }).then(rows => {
-      if (!c.signal.aborted) setQuotes(rows.sort((a,b) => a.business_date.localeCompare(b.business_date)));
-    }).catch(e => { if (!c.signal.aborted) setError(e.message); }).finally(() => { if (!c.signal.aborted) setLoading(false); });
-    return () => c.abort();
-  }, [id, metric]);
+    pages<Quote>('market-api/v1/' + path, controller.signal, { dataset: 'main', asset_id: id, metric }).then(data => {
+      if (!controller.signal.aborted) setQuoteResult({ asset: id, rows: normaliseQuoteRows(data) });
+    }).catch(() => { if (!controller.signal.aborted) setError('行情暂时无法加载'); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [id, metric, reload]);
+
   useEffect(() => {
-    const c = new AbortController();
-    if (id === '沪深300') Promise.all([pages<Session>('api/v1/stream/sessions', c.signal), pages<{model_id:string; asset_id:string}>('api/v1/models', c.signal)]).then(([s,m]) => {
-      if (!c.signal.aborted) setSessions(s.filter(r => r.result_count && m.some(model => model.asset_id === id && model.model_id === r.model_id)));
-    }).catch(e => { if (!c.signal.aborted) setOverlayError(e.message); });
-    return () => c.abort();
-  }, [id]);
+    setSessions([]);
+    setStates([]);
+    setOverlayError('');
+    if (id !== '沪深300') return;
+    const controller = new AbortController();
+    Promise.all([
+      pages<Session>('api/v1/stream/sessions', controller.signal),
+      pages<{ model_id: string; asset_id: string }>('api/v1/models', controller.signal),
+    ]).then(([available, models]) => {
+      if (controller.signal.aborted) return;
+      if (models.some(model => !model || typeof model.model_id !== 'string' || typeof model.asset_id !== 'string')) throw new Error('Invalid model metadata');
+      const eligible = available.filter(item => {
+        if (!item || typeof item.result_count !== 'number') throw new Error('Invalid replay metadata');
+        return item.result_count > 0 && models.some(model => model.asset_id === id && model.model_id === item.model_id);
+      });
+      if (eligible.some(item => typeof item.session_id !== 'string' || typeof item.start_date !== 'string' || typeof item.end_date !== 'string')) throw new Error('Invalid replay metadata');
+      setSessions(eligible.sort((a, b) => b.end_date.localeCompare(a.end_date)));
+    }).catch(() => { if (!controller.signal.aborted) setOverlayError('回放状态暂时无法加载'); });
+    return () => controller.abort();
+  }, [id, overlayReload]);
+
   useEffect(() => {
     setStates([]);
-    const c = new AbortController();
-    if (session && id === '沪深300') pages<StateRow>('api/v1/regimes', c.signal, {session_id:session}).then(rows => {
-      if (!c.signal.aborted) setStates(rows);
-    }).catch(e => { if (!c.signal.aborted) setOverlayError(e.message); });
-    return () => c.abort();
-  }, [session, id]);
-  const rows = quotes;
-  const label = metric === 'yield' ? '债券收益率' : '收盘价';
-  return <Card title="历史行情"><div className="card-inner">
-    <div className="filter-row"><label>资产 <select value={id || ''} onChange={e => { setAsset(e.target.value); setSession(''); setOverlayError(''); }}>{assets.map(a => <option key={a.id}>{a.id}</option>)}</select></label>
-    {id === '沪深300' && <label>回放状态 <select value={session} onChange={e => { setSession(e.target.value); setOverlayError(''); }}><option value="">不叠加</option>{sessions.map(s => <option key={s.session_id} value={s.session_id}>{s.start_date} 至 {s.end_date} · {s.session_id.slice(0,8)}</option>)}</select></label>}</div>
-    {overlayError && <Notice tone="warning">回放服务：{overlayError}</Notice>}
-    {catalogError || error ? <Notice tone="warning">{catalogError || error}</Notice> : loading ? <p role="status">正在读取历史行情…</p> : rows.length ? <>
-    <p>{id} · {rows[0].business_date} 至 {rows.at(-1)!.business_date} · {rows.length.toLocaleString()} 条 · 期末{label} {rows.at(-1)!.value}</p>
-    <MarketChart key={id} asset={id} rows={rows} states={states} label={label}/></> : <p>所选区间没有行情。</p>}
-    {id && user?.role !== 'viewer' && <AssetNews key={id} asset={id}/>}
-    </div></Card>;
+    if (!session || id !== '沪深300') return;
+    const controller = new AbortController();
+    setOverlayError('');
+    pages<StateRow>('api/v1/regimes', controller.signal, { session_id: session }).then(data => {
+      if (data.some(row => !row || typeof row.business_date !== 'string' || typeof row.state_name !== 'string' ||
+        !Number.isInteger(row.state_id) || row.state_id < 0)) throw new Error('Invalid replay state');
+      if (!controller.signal.aborted) setStates(data);
+    }).catch(() => { if (!controller.signal.aborted) setOverlayError('回放状态暂时无法加载'); });
+    return () => controller.abort();
+  }, [session, id, overlayReload]);
+
+  function selectAsset(next: string) {
+    setAsset(next);
+    setSession('');
+    const parameters = new URLSearchParams(location.hash.split('?')[1] || '');
+    parameters.set('tab', 'history');
+    parameters.set('asset', next);
+    history.replaceState(null, '', '#/data?' + parameters);
+  }
+
+  function toggleWatch() {
+    if (!id) return;
+    app.update(state => ({ ...state, watchlist: state.watchlist.includes(id) ? state.watchlist.filter(value => value !== id) : [...state.watchlist, id] }), undefined, 'self');
+  }
+
+  return <>
+    <div className="market-controls market-controls-end">
+      <Button icon="refresh" busy={catalogLoading || loading} onClick={() => setReload(value => value + 1)}>刷新</Button>
+    </div>
+    {catalogError && <Notice tone="warning"><span>{catalogError}</span><Button variant="ghost" onClick={() => setReload(value => value + 1)}>重试</Button></Notice>}
+    {catalogLoading && !assets.length && <div className="market-loading" role="status"><Icon name="refresh" className="spin" size={16} />正在加载</div>}
+    {!!assets.length && <div className="market-layout">
+      <aside className="market-asset-panel" aria-label="资产列表">
+        <div className="market-list-switch" role="group" aria-label="资产范围">
+          <button type="button" className={!watchedOnly ? 'selected' : ''} aria-pressed={!watchedOnly} onClick={() => setWatchedOnly(false)}>全部</button>
+          <button type="button" className={watchedOnly ? 'selected' : ''} aria-pressed={watchedOnly} onClick={() => setWatchedOnly(true)}>自选</button>
+        </div>
+        <label className="market-asset-search"><Icon name="search" size={17} /><input type="search" aria-label="搜索资产" placeholder="搜索资产" value={query} onChange={event => setQuery(event.target.value)} /></label>
+        {groups.length > 1 && <select className="market-group-select" aria-label="资产类别" value={group} onChange={event => setGroup(event.target.value)}>
+          <option value="">全部类别</option>{groups.map(name => <option key={name} value={name}>{name}</option>)}
+        </select>}
+        <div className="market-asset-list">
+          {Array.from(new Set(filtered.map(item => item.group))).map(name => <section key={name}>
+            {!group && name && <h2 className="market-asset-group">{name}</h2>}
+            {filtered.filter(item => item.group === name).map(item => <button type="button" key={item.id} className={`market-asset-item ${id === item.id ? 'selected' : ''}`} aria-current={id === item.id ? 'true' : undefined} onClick={() => selectAsset(item.id)}>
+              <span>{item.id}</span>{id === item.id && <Icon name="chevron" size={15} />}
+            </button>)}
+          </section>)}
+        </div>
+      </aside>
+      <div className="market-detail">
+        {error && <Notice tone="warning"><span>{error}</span><Button variant="ghost" onClick={() => setReload(value => value + 1)}>重试</Button></Notice>}
+        {loading && <div className="market-loading" role="status"><Icon name="refresh" className="spin" size={16} />正在加载行情</div>}
+        {last && id && <Card className="market-quote-card">
+          <div className="quote-heading">
+            <div>
+              <div className="quote-title-row"><h2>{id}</h2><IconButton icon="star" label={app.state.watchlist.includes(id) ? '移出自选' : '加入自选'} className={app.state.watchlist.includes(id) ? 'market-star-selected' : ''} aria-pressed={app.state.watchlist.includes(id)} onClick={toggleWatch} /></div>
+              <div className="quote-latest"><strong>{Number(last.value).toLocaleString('zh-CN', { maximumFractionDigits: metric === 'yield' || current?.group === '外汇' ? 4 : 2 })}{metric === 'yield' && <small>%</small>}</strong>
+                {change !== null && <span className={`quote-change ${change > 0 ? 'positive' : change < 0 ? 'negative' : ''}`}>{change > 0 ? '+' : ''}{change.toFixed(2)}%</span>}
+              </div>
+              <div className="quote-asof">{label} · <time dateTime={last.business_date}>{last.business_date}</time></div>
+            </div>
+            <div className="quote-actions"><Button icon="download" onClick={() => downloadCsv(`${id}-历史行情.csv`, ['日期', label, '日收益率'], rows.map(row => [row.business_date, row.value, row.daily_return]))}>导出全部</Button></div>
+          </div>
+          {sessions.length > 0 && <div className="quote-overlay-control"><Field label="状态叠加"><select value={session} onChange={event => setSession(event.target.value)}><option value="">不叠加</option>{sessions.map((item, index) => <option key={item.session_id} value={item.session_id}>{item.start_date} 至 {item.end_date}{sessions.some((other, otherIndex) => otherIndex !== index && other.start_date === item.start_date && other.end_date === item.end_date) ? ` · ${index + 1}` : ''}</option>)}</select></Field></div>}
+          {overlayError && <div className="quote-overlay-feedback"><Notice tone="warning"><span>{overlayError}</span><Button variant="ghost" onClick={() => setOverlayReload(value => value + 1)}>重试</Button></Notice></div>}
+          <div className="market-chart-wrap"><MarketChart key={id} asset={id} rows={rows} states={states} label={label} /></div>
+        </Card>}
+        {id && <AssetNews key={id} asset={id} />}
+      </div>
+    </div>}
+  </>;
 }

@@ -1,6 +1,6 @@
 # 前端部署与本地测试
 
-本文以当前源码和配置为准。前端是独立仓库；部分页面使用合成数据，市场数据、经济日历、研究资料及真实回放等功能需要对应后端。不要把合成数据或本地角色切换当作真实行情或生产认证。
+本文以当前源码和配置为准。前端是独立仓库，所有业务数据均从现有后端读取。没有数据的区块自动隐藏；导航、查询与显示设置仍可使用。应用不提供演示身份或模拟数据。
 
 ## 1. 新机器准备
 
@@ -62,7 +62,7 @@ npm run preview
 - 打开总览、历史行情、研究资料、经济日历、数据质量及真实回放入口；检查页面、筛选和分页，无横向溢出或控制台异常。
 - 在开发者工具 Network 中确认 /market-api 请求返回 JSON，数据源为 main；查看新闻、指标和经济日历是否与后端一致。
 - 验证回放启动、日期切换与 WebSocket；关闭对应后端后确认页面显示错误，恢复后可重新加载。
-- 缩小到手机宽度，验证导航、弹窗、键盘操作；本地模拟功能与真实接口分别检查。
+- 缩小到手机宽度，验证导航、弹窗、键盘操作；确认空响应不出现占位数据，错误请求保留重试。
 
 可选的便携版浏览器冒烟测试：
 
@@ -74,7 +74,7 @@ python3 -m venv .venv-browser
 CHROMIUM_PATH=$(.venv-browser/bin/python -c 'from playwright.sync_api import sync_playwright; p=sync_playwright().start(); print(p.chromium.executable_path); p.stop()') .venv-browser/bin/python tests/browser_smoke.py
 ```
 
-Linux 若缺少浏览器系统依赖，可按 Playwright 的提示安装依赖。脚本使用 RegimeLab-preview.html，通过注入页面及内存 Storage 替身检查便携版交互，不验证真实 HTTP、跨刷新持久化或真实后端。它会更新测试结果文件；运行后检查 git diff，避免误提交本机结果。便携构建不替代对 npm run build 产物的验证。
+Linux 若缺少浏览器系统依赖，可按 Playwright 的提示安装依赖。脚本通过本机 HTTP 提供 RegimeLab-preview.html，使用空接口响应与明确失败检查便携版交互、跨刷新显示偏好和响应式布局，不验证真实金融数据或真实后端。它会更新测试结果文件；运行后检查 git diff，避免误提交本机结果。便携构建不替代对 npm run build 产物的验证。
 
 ## 4. 静态部署
 

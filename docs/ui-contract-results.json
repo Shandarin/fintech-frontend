@@ -1,0 +1,66 @@
+{
+  "environment": "JSDOM (DOM/state only; no browser layout claims)",
+  "financialFixtures": "none; only empty responses and explicit failures",
+  "results": [
+    {
+      "name": "Empty API does not create market values or restore old synthetic state",
+      "result": "PASS"
+    },
+    {
+      "name": "All routes render with empty API results",
+      "result": "PASS"
+    },
+    {
+      "name": "Only backed tools appear in primary navigation",
+      "result": "PASS"
+    },
+    {
+      "name": "Search keyboard shortcut and deep-link navigation",
+      "result": "PASS"
+    },
+    {
+      "name": "Arrow-key tabs update selected tab and URL",
+      "result": "PASS"
+    },
+    {
+      "name": "Display preferences save actual changes and survive remount",
+      "result": "PASS"
+    },
+    {
+      "name": "Reset explains consequences and cancel preserves preferences",
+      "result": "PASS"
+    },
+    {
+      "name": "First focus/click opens Info and Escape closes it",
+      "result": "PASS"
+    },
+    {
+      "name": "Destructive API request cannot run before confirmation",
+      "result": "PASS"
+    },
+    {
+      "name": "Invalid JSON reveals a usable error and sends nothing",
+      "result": "PASS"
+    },
+    {
+      "name": "Empty response hides the response card and reports HTTP status",
+      "result": "PASS"
+    },
+    {
+      "name": "API errors preserve retry actions without synthesizing output",
+      "result": "PASS"
+    },
+    {
+      "name": "Form labels identify their inputs",
+      "result": "PASS"
+    },
+    {
+      "name": "Mobile navigation links close the disclosure after navigation",
+      "result": "PASS"
+    },
+    {
+      "name": "Application has no runtime errors, demo imports or demo requests",
+      "result": "PASS"
+    }
+  ]
+}

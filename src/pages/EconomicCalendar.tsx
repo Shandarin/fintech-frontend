@@ -24,7 +24,7 @@ export default function EconomicCalendar(): React.ReactElement {
     requestJson('/market-api/v1','economic-calendar?dataset=main&limit=1',{signal:c.signal})
       .then(response => {
         const page = response.body as Page;
-        if (response.status !== 200 || !Array.isArray(page?.items)) throw new Error('经济日历读取失败');
+        if (response.status !== 200 || !Array.isArray(page?.items)) throw new Error('经济日历读取失败（HTTP ' + response.status + '）');
         if (!c.signal.aborted) {
           if (page.date) setDate(current => current || page.date);
           else setError('暂无经济日历数据');
@@ -42,7 +42,7 @@ export default function EconomicCalendar(): React.ReactElement {
       do {
         const response = await requestJson('/market-api/v1','economic-calendar?'+query,{signal:c.signal});
         const page = response.body as Page;
-        if (response.status !== 200 || !Array.isArray(page?.items)) throw new Error('经济日历读取失败');
+        if (response.status !== 200 || !Array.isArray(page?.items)) throw new Error('经济日历读取失败（HTTP ' + response.status + '）');
         events.push(...page.items.map(r => ({...JSON.parse(r.payload),id:r.record_id})));
         query.set('cursor',page.next_cursor);
       } while (query.get('cursor'));

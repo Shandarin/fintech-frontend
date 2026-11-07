@@ -51,7 +51,7 @@
 .asset-news-card { min-width: 0; }
 .asset-news-list { list-style: none; padding: 0 24px 9px; margin: 0; }
 .asset-news-list li + li { border-top: 1px solid var(--border); }
-.asset-news-list button { display: grid; grid-template-columns: minmax(0, 1fr) auto 15px; align-items: center; gap: 18px; width: 100%; border: 0; background: transparent; text-align: left; padding: 18px 0; color: var(--ink); }
+.asset-news-list button { display: grid; grid-template-columns: minmax(0, 1fr) auto 15px; align-items: center; gap: 18px; width: 100%; border: 0; background: transparent; text-align: left; padding: 6px 0; color: var(--ink); }
 .asset-news-list strong { font-size: 14px; font-weight: 500; line-height: 1.7; overflow-wrap: anywhere; }
 .asset-news-list time { color: var(--muted); font-size: 12px; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .asset-news-list svg { color: #aaa299; }
@@ -61,7 +61,7 @@
 .news-search-form input { text-transform: uppercase; }
 .news-feed { list-style: none; padding: 0; margin: 0; }
 .news-feed > li + li { border-top: 1px solid var(--border); }
-.news-story { display: flex; align-items: center; justify-content: space-between; gap: 28px; width: 100%; padding: 10px 29px; border: 0; background: transparent; text-align: left; color: var(--ink); }
+.news-story { display: flex; align-items: center; justify-content: space-between; gap: 28px; width: 100%; padding: 6px 29px; border: 0; background: transparent; text-align: left; color: var(--ink); }
 .news-story-content { min-width: 0; }
 .news-story h2 { margin: 8px 0 0; font-size: 18px; line-height: 1.7; font-weight: 600; overflow-wrap: anywhere; }
 .news-story > svg { flex-shrink: 0; color: #b5aaa0; }
@@ -91,7 +91,7 @@
 .calendar-date-controls .field-label { margin: 0; }
 .calendar-date-controls input { min-width: 160px; }
 .economic-agenda { overflow: hidden; }
-.agenda-day { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 27px; padding: 25px 30px; }
+.agenda-day { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 27px; padding: 6px 30px; }
 .agenda-day + .agenda-day { border-top: 1px solid var(--border); }
 .agenda-date { display: flex; align-items: flex-start; justify-content: center; padding-top: 8px; }
 .agenda-date time { display: flex; flex-direction: column; align-items: center; width: 72px; padding: 10px 0; border-radius: 10px; }
@@ -100,7 +100,7 @@
 .agenda-today .agenda-date time { background: var(--accent-soft); }
 .agenda-today .agenda-date strong { color: #F0520F; }
 .agenda-events { list-style: none; padding: 0; margin: 0; align-self: center; min-width: 0; }
-.agenda-events li { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 17px 0; min-height: 54px; }
+.agenda-events li { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 6px 0; }
 .agenda-events li + li { border-top: 1px solid var(--border); }
 .agenda-events li > span { font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
 .agenda-events li > strong { min-width: 80px; max-width: 40%; text-align: right; font-size: 16px; font-weight: 600; line-height: 1.5; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
@@ -126,7 +126,7 @@
   .market-asset-item.selected { border-color: #add6c3; }
   .market-controls { margin-bottom: 18px; }
   .calendar-controls { gap: 15px; }
-  .agenda-day { grid-template-columns: 65px minmax(0, 1fr); gap: 17px; padding: 19px 20px; }
+  .agenda-day { grid-template-columns: 65px minmax(0, 1fr); gap: 17px; padding: 6px 20px; }
   .agenda-date time { width: 62px; }
 }
 @media (max-width: 520px) {
@@ -152,7 +152,7 @@
   .asset-news-list { padding: 0 17px 6px; }
   .news-search-form { width: 100%; gap: 10px; }
   .news-search-form .field { flex: 1; min-width: 160px; }
-  .news-story { padding: 10px 18px; gap: 14px; }
+  .news-story { padding: 6px 18px; gap: 14px; }
   .news-story h2 { font-size: 16px; }
   .news-story > svg { width: 16px; height: 16px; }
   .calendar-week-nav { flex-wrap: wrap; }
@@ -160,11 +160,11 @@
   .calendar-date-controls { width: 100%; }
   .calendar-date-controls .field { flex: 1; }
   .calendar-date-controls input { flex: 1; min-width: 0; }
-  .agenda-day { grid-template-columns: 44px minmax(0, 1fr); gap: 14px; padding: 18px 14px; }
+  .agenda-day { grid-template-columns: 44px minmax(0, 1fr); gap: 14px; padding: 6px 14px; }
   .agenda-date { padding-top: 6px; }
   .agenda-date time { width: 44px; padding: 7px 0; }
   .agenda-date strong { font-size: 27px; }
-  .agenda-events li { gap: 12px; padding: 14px 0; }
+  .agenda-events li { gap: 12px; padding: 6px 0; }
   .agenda-events li > span { font-size: 13px; }
   .agenda-events li > strong { min-width: 44px; font-size: 14px; }
 }

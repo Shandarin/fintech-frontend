@@ -1,35 +1,81 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../state/AppContext';
-import { Button, Badge, Card, Empty, IconButton, Modal, PageHead } from '../components/ui';
-import { CHART_COLORS, Heatmap, RegimeLegend, Sparkline, TimeChart } from '../components/charts';
+import { Button, Card, IconButton, Modal, PageHead, Stat } from '../components/ui';
+import { TimeChart } from '../components/charts';
 import { Icon } from '../components/Icon';
-import { DateRange } from '../components/DateRange';
-import { metrics, normalized, number, REGIMES, sampleRegime, signed, sliceDates, timeLabel } from '../lib/analytics';
 import { downloadFile } from '../lib/files';
-import type { Asset, Regime } from '../types';
-import { SNAPSHOT } from '../data/mock';
-const WIDGETS = [{ id: 'trend', title: '跨资产走势', width: 'wide' }, { id: 'state', title: '当前市场状态', width: 'narrow' }, { id: 'heatmap', title: '市场状态热力图', width: 'wide' }, { id: 'alerts', title: '最新预警', width: 'narrow' }];
-export default function Overview() {
-  const app = useApp(); const { assets, state, from, to } = app;
-  const [metric, setMetric] = useState('normalized'), [visible, setVisible] = useState(['csi300', 'gold', 'cn-bond']), [customize, setCustomize] = useState(false), [widgets, setWidgets] = useState(state.widgets), [drag, setDrag] = useState<string | null>(null);
-  const watched = [...assets.filter(a => state.watchlist.includes(a.id)), ...assets.filter(a => !state.watchlist.includes(a.id))].slice(0, 4);
-  const chartAssets = assets.filter(a => visible.includes(a.id)); const chartDates = assets[0] ? sliceDates(assets[0].prices, from, to).map(p => p.date) : [];
-  const lead = assets.find(a => a.id === 'csi300') || assets[0]; const regime = sampleRegime(lead?.prices.filter(p => p.date <= to) || []);
-  const alerts = state.alerts.filter(a => assets.some(asset => asset.id === a.assetId));
-  const snapshot = useMemo(() => assets.map(a => ({ asset: a, m: metrics(a.prices.filter(p => p.date <= to)) })), [assets, to]);
-  const goHeatmap = (a: Asset, date: string) => { app.setSelectedAsset(a.id); app.navigate('regimes'); app.notify(`已定位 ${a.name}；点击热力图可查看 ${date} 的状态详情。`, 'info'); };
+import { pages } from '../services/pagedApi';
+import { requestJson } from '../services/httpClient';
+
+const WIDGETS = [{id:'trend',title:'跨资产走势',width:'wide'}, {id:'state',title:'沪深300 回放状态',width:'narrow'},
+  {id:'heatmap',title:'状态变化',width:'wide'}, {id:'alerts',title:'最新预警',width:'narrow'}];
+const benchmarks = [{name:'沪深300',group:'equity'}, {name:'标普500',group:'equity'}, {name:'COMEX黄金期货',group:'commodity'}, {name:'美元指数DXY',group:'fx'}];
+type Price = {business_date:string; value:string; daily_return:number | null};
+type Prediction = {business_date:string; asset_id:string; state_id:number; state_name:string; probabilities:number[]};
+const palette = ['#366dbc','#b88716','#9653a5'];
+
+export default function Overview(): React.ReactElement {
+  const app = useApp();
+  const {state,user} = app;
+  const [customize,setCustomize] = useState(false), [widgets,setWidgets] = useState(state.widgets), [drag,setDrag] = useState<string|null>(null);
+  const [quotes,setQuotes] = useState<Record<string,Price[]>>({});
+  const [errors,setErrors] = useState<Record<string,string>>({});
+  const [history,setHistory] = useState<Prediction[]>();
+  const [modelError,setModelError] = useState('');
+  const allowed = benchmarks.filter(b => !user || user.allowedClasses.some(c => c === b.group));
+  useEffect(() => {
+    const c = new AbortController();
+    async function load(name:string) {
+      const latest = await requestJson('/market-api/v1','market/latest?' + new URLSearchParams({asset_id:name,dataset:'main'}),{signal:c.signal});
+      if (latest.status !== 200) throw new Error('行情读取失败');
+      const end = (latest.body as {business_date?:string}).business_date;
+      if (!end) return [];
+      const start = new Date(end + 'T00:00:00Z');
+      start.setUTCDate(start.getUTCDate()-90);
+      return pages<Price>('market-api/v1/market/daily-return',c.signal,{asset_id:name,dataset:'main',from:start.toISOString().slice(0,10),to:end});
+    }
+    for (const {name} of allowed) load(name).then(rows => {
+      if (!c.signal.aborted) setQuotes(old => ({...old,[name]:rows}));
+    }).catch(() => { if (!c.signal.aborted) setErrors(old => ({...old,[name]:'行情读取失败'})); });
+    return () => c.abort();
+  }, [user]);
+  useEffect(() => {
+    const c = new AbortController();
+    async function load() {
+      const [models,sessions] = await Promise.all([
+        pages<{model_id:string;asset_id:string}>('api/v1/models',c.signal),
+        pages<{model_id:string;session_id:string;status:string}>('api/v1/stream/sessions',c.signal),
+      ]);
+      const session = sessions.find(s => s.status === 'COMPLETED' && models.some(m => m.asset_id === '沪深300' && m.model_id === s.model_id));
+      return session ? pages<Prediction>('api/v1/regimes',c.signal,{session_id:session.session_id}) : [];
+    }
+    load().then(rows => { if (!c.signal.aborted) setHistory(rows); }).catch(() => { if (!c.signal.aborted) setModelError('回放数据读取失败'); });
+    return () => c.abort();
+  }, []);
+  const latest = history?.at(-1);
+  const pending = modelError || (history ? '暂无已完成的回放' : '正在读取回放…');
+  const comparable = allowed.filter(b => quotes[b.name]?.length).map(b => ({name:b.name, byDay:new Map(quotes[b.name].map(r => [r.business_date,Number(r.value)]))}));
+  const days = comparable.length ? [...comparable[0].byDay.keys()].filter(d => comparable.every(b => b.byDay.has(d))) : [];
+  const series = comparable.map(b => ({name:b.name,values:days.map(d => (b.byDay.get(d)! / b.byDay.get(days[0])! - 1)*100)}));
+  const alerts = state.alerts.filter(a => a.status !== 'resolved');
+  const exportReport = () => downloadFile('市场总览.json',JSON.stringify({quotes:Object.fromEntries(allowed.map(b => [b.name,quotes[b.name]?.at(-1)])),replay:latest,alerts},null,2),'application/json');
   const reorder = (id: string, target: string) => { const next = [...widgets]; const fromIndex = next.indexOf(id), targetIndex = next.indexOf(target); if (fromIndex < 0 || targetIndex < 0) return; next.splice(fromIndex, 1); next.splice(targetIndex, 0, id); setWidgets(next); };
-  const exportReport = () => { downloadFile('FinTech-市场快照-模拟数据.json', JSON.stringify({ notice: '合成演示数据，不构成投资建议', range: { from, to }, snapshotDate: SNAPSHOT, state: regime, assets: snapshot.map(s => ({ id: s.asset.id, name: s.asset.name, metrics: s.m })), alerts }, null, 2), 'application/json'); app.notify('已导出市场快照 JSON'); };
-  const content = (id: string) => {
-    if (id === 'trend') return <Card className="trend-card" title="跨资产表现" action={<div className="segments subtle"><button type="button" className={metric === 'normalized' ? 'active' : ''} onClick={() => setMetric('normalized')}>累计收益</button><button type="button" className={metric === 'vol' ? 'active' : ''} onClick={() => setMetric('vol')}>波动率</button></div>}><div className="asset-chart-tabs">{assets.filter(a => ['csi300', 'sp500', 'gold', 'cn-bond', 'dxy'].includes(a.id)).map((a, i) => <button type="button" key={a.id} className={visible.includes(a.id) ? 'selected' : ''} onClick={() => setVisible(v => v.includes(a.id) ? v.filter(id => id !== a.id) : [...v, a.id])}><i style={{ background: CHART_COLORS[i] }}/>{a.name}{visible.includes(a.id) && <Icon name="check" size={12}/>}</button>)}</div>{chartAssets.length ? <TimeChart labels={chartDates} height={250} series={chartAssets.map(a => ({ name: a.name, color: CHART_COLORS[assets.filter(x => ['csi300', 'sp500', 'gold', 'cn-bond', 'dxy'].includes(x.id)).findIndex(x => x.id === a.id)], values: metric === 'normalized' ? normalized(sliceDates(a.prices, from, to)) : chartDates.map(date => metrics(a.prices.filter(p => p.date <= date)).volatility20) }))}/> : <Empty title="选择至少一个资产" description="点击上方资产标签加入对比。"/>}<div className="chart-foot"><span><i className="live-dot"/>研究区间 {from} — {to}</span><button type="button" onClick={() => app.navigate('data')}>探索全部资产<Icon name="arrow" size={14}/></button></div></Card>;
-    if (id === 'state') return <section className="state-hero"><div className="state-top"><span>当前市场状态</span><Badge tone="translucent">{state.modelVersion.includes('gmm') ? 'GMM' : state.modelVersion.includes('hmm') ? 'HMM' : 'KMeans'} 快照 · 演示</Badge></div><div className="regime-illustration"><div className="orbit orbit-one"/><div className="orbit orbit-two"/><div className="orbit orbit-three"/><span className="orbit-core"><Icon name="activity" size={34}/></span><i className="orbit-dot"/></div><h2>{REGIMES[regime.regime].label}<Icon name="arrow" size={22}/></h2><p>{REGIMES[regime.regime].description}</p><div className="confidence-row"><span>状态归属度<small>演示分数</small></span><strong>{number(regime.confidence, 1)}<em>%</em></strong></div><div className="probability-track">{(Object.keys(REGIMES) as Regime[]).map(r => <span key={r} title={`${REGIMES[r].label} ${number(regime.probabilities[r], 1)}%`} style={{ width: `${regime.probabilities[r]}%`, background: r === 'bull' ? '#a6d7be' : r === 'range' ? '#e8d5a1' : '#cf9a9f' }}/>)}</div><div className="state-foot"><span>参考资产：{lead?.name || '暂无'}</span><button type="button" onClick={() => app.navigate('regimes')}>查看状态依据<Icon name="arrow" size={14}/></button></div></section>;
-    if (id === 'heatmap') return <Card title="市场状态热力图" action={<Button variant="ghost" onClick={() => app.navigate('regimes')} icon="external">完整视图</Button>}><div className="card-inner"><Heatmap assets={assets.filter(a => ['csi300', 'sp500', 'cn-bond', 'gold', 'oil', 'dxy'].includes(a.id))} from={from} to={to} onSelect={goHeatmap} small/><div className="heatmap-footer"><RegimeLegend/><span className="muted small">局部演示分类器</span></div></div></Card>;
-    if (id === 'alerts') return <Card title="最新预警" action={<Badge tone="red">{alerts.filter(a => a.status === 'new').length} 待处理</Badge>}><div className="overview-alerts">{alerts.filter(a => a.status !== 'resolved').slice(0, 3).map(a => <button type="button" key={a.id} onClick={() => app.openAlert(a.id)} className="overview-alert"><span className={`alert-icon alert-icon-${a.severity}`}><Icon name={a.severity === 'high' ? 'activity' : 'bell'} size={17}/></span><div><strong>{a.title}</strong><p>{timeLabel(a.createdAt)}<span>{a.status === 'new' ? '待确认' : '已确认'}</span></p></div><Icon name="chevron" size={15}/></button>)}{!alerts.some(a => a.status !== 'resolved') && <Empty title="暂时没有待处理预警" description="前往预警中心创建并测试规则。"/>}</div><div className="card-bottom"><Button variant="ghost" className="full-width" onClick={() => app.navigate('alerts')}>进入预警中心<Icon name="arrow" size={15}/></Button></div></Card>;
+  const content = (id:string) => {
+    if (id === 'trend') return <Card title="跨资产走势" subtitle="近 90 天 · 以首个共同交易日为基准的累计收益率"><div className="card-inner">
+      {days.length ? <><p>{series.map(s => s.name).join(' · ')}</p><TimeChart labels={days} series={series}/></> : <p>{allowed.every(b => errors[b.name] || quotes[b.name]) ? '暂无可比较的行情' : '正在读取行情…'}</p>}</div></Card>;
+    if (id === 'state') return <Card title="沪深300 回放状态" action={<Button onClick={() => app.navigate('regimes')}>查看回放</Button>}><div className="card-inner">
+      {latest ? <><h2>{latest.state_name}</h2><p>{latest.business_date} · 状态归属概率 {(latest.probabilities[latest.state_id]*100).toFixed(1)}%</p></> : <p>{pending}</p>}</div></Card>;
+    if (id === 'heatmap') return <Card title="沪深300 状态变化"><div className="card-inner">{history?.length ? <>
+      <p>{history[0].business_date} 至 {latest!.business_date} · {history.length} 个交易日</p>
+      <div style={{display:'flex',gap:2}}>{history.map(r => <span key={r.business_date} title={r.business_date+' · '+r.state_name} style={{flex:1,height:22,background:palette[r.state_id]}}/>)}</div>
+      <p>{Array.from(new Map(history.map(r => [r.state_id,r.state_name]))).map(([id,name]) => <span key={id} style={{marginRight:14}}><b style={{color:palette[id]}}>● </b>{name}</span>)}</p></> : <p>{pending}</p>}</div></Card>;
+    if (id === 'alerts') return <Card title="最新预警"><div className="card-inner">{alerts.length ? alerts.slice(0,3).map(a => <Button key={a.id} onClick={() => app.openAlert(a.id)}>{a.title}</Button>) : '暂无待处理预警'}</div></Card>;
     return null;
   };
-  return <><PageHead title="市场总览" actions={<><Button icon="settings" onClick={() => { setWidgets(state.widgets); setCustomize(true); }}>自定义看板</Button><Button variant="primary" icon="download" onClick={exportReport}>导出快照</Button></>}/><div className="overview-toolbar"><div className="overview-status"><span className="live-dot"/><b>多资产监测</b><span className="muted">{assets.length} 项资产</span><span className="v-divider"/><span>样本截至 {SNAPSHOT}</span></div><DateRange/></div>
-    <div className="market-stats">{watched.map(a => { const points = a.prices.filter(p => p.date <= to), m = metrics(points); return <button type="button" className="market-stat" key={a.id} onClick={() => { app.setSelectedAsset(a.id); app.navigate('data'); }}><div className="market-stat-label"><span>{a.name}</span><small>{a.symbol}</small></div><div className="market-stat-body"><strong>{number(points.at(-1)?.close || 0, a.category === 'fx' ? 4 : 2)}</strong><Sparkline values={points.slice(-30).map(p => p.close)} positive={m.return1d >= 0}/></div><div className="market-stat-bottom"><span className={m.return1d >= 0 ? 'positive' : 'negative'}>{m.return1d >= 0 ? '↗' : '↘'} {signed(m.return1d)}</span><small>较前一观测日</small></div></button>; })}</div>
-    {state.widgets.length ? <div className="dashboard-grid">{state.widgets.map(id => <div className={`widget widget-${WIDGETS.find(w => w.id === id)?.width || 'wide'}`} key={id}>{content(id)}</div>)}</div> : <Card><Empty title="这张看板还没有组件" description="添加走势图、状态卡片、热力图或预警列表。" action={<Button variant="primary" onClick={() => { setWidgets(state.widgets); setCustomize(true); }}>添加组件</Button>}/></Card>}
+  return <><PageHead title="市场总览" actions={<><Button onClick={() => {setWidgets(state.widgets);setCustomize(true);}}>自定义看板</Button><Button onClick={exportReport}>导出快照</Button></>}/>
+    <div className="market-stats">{allowed.map(b => { const last=quotes[b.name]?.at(-1); return <Stat key={b.name} label={b.name} value={last ? Number(last.value).toLocaleString('zh-CN',{maximumFractionDigits:2}) : '—'} detail={last ? last.business_date + (last.daily_return != null ? ' · 日收益率 '+(last.daily_return*100).toFixed(2)+'%' : '') : errors[b.name] || (quotes[b.name] ? '暂无行情' : '读取中…')}/>; })}</div>
+    <div className="dashboard-grid">{state.widgets.map(id => <div key={id} className={'widget widget-'+(WIDGETS.find(w=>w.id===id)?.width || 'wide')}>{content(id)}</div>)}</div>
     {customize && <Modal title="让看板更适合你的研究" onClose={() => setCustomize(false)} footer={<><Button onClick={() => setWidgets(WIDGETS.map(w => w.id))}>恢复默认布局</Button><Button variant="primary" onClick={() => { app.update(s => ({ ...s, widgets }), '调整个人看板', 'self'); setCustomize(false); app.notify('看板布局已保存'); }}>保存看板</Button></>}><p className="muted">勾选需要的组件；拖动已选组件调整顺序，也可以使用上下箭头。</p><div className="widget-options">{[...widgets, ...WIDGETS.map(w => w.id).filter(id => !widgets.includes(id))].map(id => <div key={id} className={`widget-option ${drag === id ? 'dragging' : ''}`} draggable={widgets.includes(id)} onDragStart={() => setDrag(id)} onDragEnd={() => setDrag(null)} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); if (drag) reorder(drag, id); setDrag(null); }}><Icon name="grip" size={16}/><label><input type="checkbox" checked={widgets.includes(id)} onChange={e => setWidgets(w => e.target.checked ? [...w, id] : w.filter(x => x !== id))}/>{WIDGETS.find(w => w.id === id)?.title}</label><IconButton icon="arrowup" label="向上移动" disabled={!widgets.includes(id) || widgets.indexOf(id) === 0} onClick={() => reorder(id, widgets[widgets.indexOf(id) - 1])}/><IconButton icon="arrowdown" label="向下移动" disabled={!widgets.includes(id) || widgets.indexOf(id) === widgets.length - 1} onClick={() => reorder(id, widgets[widgets.indexOf(id) + 1])}/></div>)}</div><p className="small muted">布局只保存在当前浏览器，正式接入后可保存到用户配置服务。</p></Modal>}
   </>;
 }
+

@@ -1,18 +1,58 @@
-import React, { useState } from 'react';
-import { useApp } from '../state/AppContext';
-import type { QualityIssue } from '../types';
-import { Badge, Button, Card, Empty, Modal, Notice, PageHead, ProgressBar, Stat, Tabs } from '../components/ui';
-import { Icon } from '../components/Icon';
-import { canAdmin, mean, number, timeLabel } from '../lib/analytics';
-import { downloadFile } from '../lib/files';
-export default function Quality() {
-  const app = useApp(), { state, user } = app; const [status, setStatus] = useState('open'), [issue, setIssue] = useState<QualityIssue | null>(null), [checking, setChecking] = useState(false), [checkedAt, setCheckedAt] = useState('');
-  const open = state.issues.filter(i => i.status === 'open');
-  const run = () => { setChecking(true); setTimeout(() => { setCheckedAt(new Date().toLocaleTimeString('zh-CN', { hour12: false })); setChecking(false); app.notify(`模拟检查完成：${state.sources.length}个数据源，${open.length}项待处理问题。`); }, 900); };
-  const repair = () => { if (!issue) return; const key = issue.dimension === '完整性' ? 'completeness' : issue.dimension === '一致性' ? 'consistency' : 'timeliness'; if (app.update(s => ({ ...s, issues: s.issues.map(i => i.id === issue.id ? { ...i, status: 'resolved' } : i), sources: s.sources.map(src => src.id === issue.sourceId ? { ...src, [key]: 100, status: src.status === 'delayed' ? 'online' : src.status } : src) }), `模拟修复数据问题 ${issue.id}`, 'admin')) { setIssue(null); app.notify('演示问题已标记修复；没有修改真实数据。'); } };
-  return <><PageHead title="数据质量" actions={<><Button icon="download" onClick={() => downloadFile('数据质量报告-模拟.json', JSON.stringify({ mock: true, notice: '所有内置指标为演示快照；未连接实际数据源', checkedAt: checkedAt || '预置快照', sources: state.sources, issues: state.issues }, null, 2), 'application/json')}>导出报告</Button><Button variant="primary" icon="refresh" busy={checking} onClick={run}>运行模拟检查</Button></>}/><div className="stats-grid"><Stat label="完整性 · 示例" value={<>{number(mean(state.sources.map(s => s.completeness)), 1)}<small>%</small></>} detail="各数据源完整性简单平均" icon="layers"/><Stat label="一致性 · 示例" value={<>{number(mean(state.sources.map(s => s.consistency)), 1)}<small>%</small></>} detail="映射与跨源规则演示快照" icon="shield"/><Stat label="时效性 · 示例" value={<>{number(mean(state.sources.map(s => s.timeliness)), 1)}<small>%</small></>} detail="按来源配置的新鲜度规则" icon="clock"/><Stat label="待处理问题" value={open.length} detail={checkedAt ? `最近模拟检查 ${checkedAt}` : '预置问题场景'} icon="warning"/></div><Notice>内置质量百分比为预置演示指标，不是对价格数组执行完整审计后的测量值。CSV导入的完整性根据实际空值比例计算。</Notice>
-    <Card title="数据源健康度" subtitle="ODS → DWD 数据质量概览" action={<Badge tone="green" dot>演示快照</Badge>}><div className="table-scroll"><table className="data-table"><thead><tr><th>数据源</th><th>完整性</th><th>一致性</th><th>时效性</th><th>状态</th></tr></thead><tbody>{state.sources.map(s => <tr key={s.id}><td><strong>{s.name}</strong><small className="block muted">{s.type} · {s.frequency}</small></td>{(['completeness', 'consistency', 'timeliness'] as const).map(k => <td key={k}><div className="quality-metric"><span className="mono">{number(s[k], 1)}%</span><ProgressBar value={s[k]} color={s[k] < 98 ? 'var(--amber)' : 'var(--accent)'}/></div></td>)}<td><Badge tone={s.status === 'online' ? 'green' : s.status === 'delayed' ? 'amber' : 'neutral'} dot>{s.status === 'online' ? '已就绪' : s.status === 'delayed' ? '延迟' : '暂停'}</Badge></td></tr>)}</tbody></table></div></Card>
-    <div className="section-toolbar"><h2 className="section-title">质量问题工作流</h2><Tabs items={[{ id: 'open', label: '待处理', count: open.length }, { id: 'resolved', label: '已修复', count: state.issues.length - open.length }, { id: 'all', label: '全部' }]} value={status} onChange={setStatus}/></div><div className="issue-list">{state.issues.filter(i => status === 'all' || i.status === status).map(i => <div className="issue-row card" key={i.id}><span className={`issue-icon ${i.status === 'resolved' ? 'resolved' : ''}`}><Icon name={i.status === 'resolved' ? 'check' : 'warning'} size={21}/></span><div className="issue-body"><div><h3>{i.title}</h3><Badge tone={i.status === 'resolved' ? 'green' : i.severity === 'medium' ? 'amber' : 'neutral'}>{i.status === 'resolved' ? '已修复' : i.dimension}</Badge></div><p>{i.description}</p><small>{state.sources.find(s => s.id === i.sourceId)?.name} · {timeLabel(i.detectedAt)}</small></div><Button icon="spark" onClick={() => setIssue(i)}>{i.status === 'resolved' ? '查看记录' : '修复建议'}</Button></div>)}</div>{!state.issues.some(i => status === 'all' || i.status === status) && <Card><Empty title="没有待处理的质量问题" description="所有演示问题均已完成处理。"/></Card>}
-    {issue && <Modal title="质量问题与修复建议" drawer onClose={() => setIssue(null)} footer={<><Button icon="branch" onClick={() => { setIssue(null); app.navigate('lineage'); }}>查看数据溯源</Button><Button variant="primary" disabled={!canAdmin(user) || issue.status === 'resolved'} onClick={repair}>应用模拟修复</Button></>}><Badge tone="amber">{issue.dimension} · {issue.status === 'open' ? '待处理' : '已修复'}</Badge><h2 className="detail-heading">{issue.title}</h2><p>{issue.description}</p><h3 className="subheading">规则型修复建议</h3><div className="recommendation"><Icon name="spark" size={20}/><p>{issue.suggestion}</p></div><dl className="key-values"><div><dt>问题编号</dt><dd className="mono">{issue.id}</dd></div><div><dt>数据源</dt><dd>{state.sources.find(s => s.id === issue.sourceId)?.name}</dd></div><div><dt>检测时间</dt><dd>{timeLabel(issue.detectedAt)}</dd></div><div><dt>建议来源</dt><dd>预置规则库，未调用AI</dd></div></dl><Notice>“应用模拟修复”仅更新本地问题状态与演示质量指标。真实处理应经回源校验、版本记录和人工复核，不能用按钮代替数据修复。</Notice></Modal>}
-  </>;
+import React, { useEffect, useState } from 'react';
+import { Button, Card, Empty, Notice, PageHead, SearchBox } from '../components/ui';
+import { pages } from '../services/pagedApi';
+
+type Source = { source_id: string; relative_path: string; kind: string };
+type Run = { run_id: number; source_id: string; status: string; input_records: number; accepted_records: number; rejected_records: number; finished_at: string | null };
+type Issue = { id: number; run_id: number; rule_id: string; severity: string; affected: number; details: string };
+
+const rules: Record<string,string> = {
+  provider_missing_asset: '供应方缺少资产行情', unknown_release_timezone_and_unit: '发布时间的时区和单位待确认',
+  empty_body: '正文为空', unknown_indicator_semantics_and_unit: '指标含义和单位待确认', article_index_without_body: '文章仅有索引',
+};
+const kinds: Record<string,string> = { news:'新闻', markdown:'资金摘要', wechat:'公众号', assets:'资产目录', market:'行情', indicator:'指标', economic:'经济日历', social:'科技社交', turnover:'商品期货成交额' };
+
+export function ImportRecords({ quality = false }: {quality?: boolean}): React.ReactElement {
+  const [data,setData] = useState<{sources:Source[]; runs:Run[]; issues:Issue[]}>();
+  const [error,setError] = useState('');
+  const [refresh,setRefresh] = useState(0);
+  const [query,setQuery] = useState('');
+  const [page,setPage] = useState(0);
+  useEffect(() => {
+    const c = new AbortController();
+    setError(''); setData(undefined);
+    const params = {dataset:'main'};
+    Promise.all([
+      pages<Source>('market-api/v1/sources',c.signal),
+      pages<Run>('market-api/v1/runs',c.signal,params),
+      pages<Issue>('market-api/v1/quality',c.signal,params),
+    ]).then(([sources,runs,issues]) => { if (!c.signal.aborted) setData({sources,runs,issues}); })
+      .catch(e => { if (!c.signal.aborted) setError(e.message); });
+    return () => c.abort();
+  }, [refresh]);
+  const sources = new Map(data?.sources.map(s => [s.source_id,s]));
+  const runs = new Map(data?.runs.map(r => [r.run_id,r]));
+  const issues = new Map<number,Issue[]>();
+  for (const i of data?.issues || []) issues.set(i.run_id,[...(issues.get(i.run_id) || []),i]);
+  const sourceName = (run?: Run) => run && (sources.get(run.source_id)?.relative_path || run.source_id);
+  const visible = (data?.runs || []).filter(r => sourceName(r)?.toLowerCase().includes(query.trim().toLowerCase()) || String(r.run_id) === query.trim());
+  const pageCount = Math.max(1,Math.ceil(visible.length/20));
+  const current = Math.min(page,pageCount-1);
+  return <Card title={quality ? '导入质量结果' : '数据来源与导入批次'} action={<Button icon="refresh" onClick={() => setRefresh(n => n+1)}>刷新</Button>}><div className="card-inner">
+    {error ? <Notice tone="warning">{error}</Notice> : !data ? <p role="status">正在读取导入记录…</p> : quality ? <>
+    <p>{runs.size.toLocaleString()} 个批次 · 接收 {data.runs.reduce((n,r) => n+r.accepted_records,0).toLocaleString()} 条 · 拒收 {data.runs.reduce((n,r) => n+r.rejected_records,0).toLocaleString()} 条 · {data.issues.length} 项质量提示</p>
+    {data.issues.length ? <div className="table-scroll"><table className="data-table"><thead><tr><th>质量提示</th><th>来源文件</th><th>批次</th><th>级别</th><th>涉及记录</th></tr></thead><tbody>
+      {data.issues.map(i => <tr key={i.id}><td>{rules[i.rule_id] || i.rule_id}</td><td>{sourceName(runs.get(i.run_id)) || '来源未知'}</td><td>{i.run_id}</td><td>{i.severity === 'warning' ? '提醒' : i.severity}</td><td>{i.affected.toLocaleString()}</td></tr>)}
+    </tbody></table></div> : <Empty title="暂无质量提示"/>}</> : <>
+    <SearchBox value={query} onChange={v => {setQuery(v);setPage(0);}} placeholder="搜索来源文件或批次编号"/>
+    <p>{new Set(visible.map(r => r.source_id)).size.toLocaleString()} 个来源 · {visible.length.toLocaleString()} 个导入批次</p>
+    <div className="table-scroll"><table className="data-table"><thead><tr><th>来源文件</th><th>类型</th><th>批次</th><th>导入状态</th><th>接收 / 拒收</th><th>质量提示</th></tr></thead><tbody>
+      {visible.slice(current*20,(current+1)*20).map(r => { const kind = sources.get(r.source_id)?.kind || ''; return <tr key={r.run_id}><td>{sourceName(r)}</td><td>{kinds[kind] || kind}</td><td>{r.run_id}</td><td>{r.status === 'SUCCESS' ? '成功' : r.status}</td><td>{r.accepted_records.toLocaleString()} / {r.rejected_records.toLocaleString()}</td><td>{issues.get(r.run_id)?.map(i => rules[i.rule_id] || i.rule_id).join('、') || '—'}</td></tr>; })}
+    </tbody></table></div>{!visible.length && <Empty/>}
+    <div className="table-footer"><span>第 {current+1} / {pageCount} 页</span><div><Button disabled={!current} onClick={() => setPage(current-1)}>上一页</Button><Button disabled={current+1>=pageCount} onClick={() => setPage(current+1)}>下一页</Button></div></div></>}
+  </div></Card>;
+}
+
+export default function Quality(): React.ReactElement {
+  return <><PageHead title="数据质量"/><ImportRecords quality/></>;
 }

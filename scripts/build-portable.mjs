@@ -13,15 +13,7 @@ catch (error) {
   if (process.env.TS_MODULE) ts = require(process.env.TS_MODULE);
   else throw new Error('Install dependencies with npm install before building. ' + error.message);
 }
-const files = [];
-function walk(dir) {
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const p = path.join(dir, entry.name);
-    if (entry.isDirectory()) walk(p);
-    else if (/\.tsx?$/.test(p) && !p.endsWith('.d.ts')) files.push(p);
-  }
-}
-walk(path.join(root, 'src'));
+const files = new Set([path.join(root, 'src/main.tsx')]);
 const modules = [];
 let errors = 0;
 for (const p of files) {
@@ -41,14 +33,22 @@ for (const p of files) {
       errors++;
     }
   }
+  for (const [, dependency] of result.outputText.matchAll(/require\("([.][^"]+)"\)/g)) {
+    if (dependency.endsWith('.css')) continue;
+    const base = path.resolve(path.dirname(p), dependency);
+    const file = [base + '.tsx', base + '.ts'].find(candidate => fs.existsSync(candidate));
+    if (!file) throw new Error('Missing source module: ' + dependency);
+    files.add(file);
+  }
   modules.push(`${JSON.stringify(id)}:function(module,exports,require){\n${result.outputText}\n}`);
 }
 if (errors) process.exit(1);
 const runtime = fs.readFileSync(path.join(root, 'vendor/react-runtime.js'), 'utf8');
-const app = `${runtime}\n;(function(){'use strict';
+const charts = fs.readFileSync(path.join(root, 'node_modules/highcharts/highstock.js'), 'utf8');
+const app = `${charts}\n${runtime}\n;(function(){'use strict';
 var modules={${modules.join(',\n')}};
 var cache={};
-var external={'react':window.React,'react-dom/client':window.ReactDOM,'react-dom':window.__ReactDOMPortals};
+var external={'highcharts/highstock.js':window.Highcharts,'react':window.React,'react-dom/client':window.ReactDOM,'react-dom':window.__ReactDOMPortals};
 function resolve(request,parent){
   if(Object.prototype.hasOwnProperty.call(external,request))return request;
   if(request.endsWith('.css'))return '__style__';
@@ -75,7 +75,7 @@ fs.mkdirSync(path.join(dist, 'assets'), { recursive: true });
 fs.writeFileSync(path.join(dist, 'assets/app.js'), app);
 fs.writeFileSync(path.join(dist, 'assets/style.css'), css);
 if (fs.existsSync(path.join(root, 'public'))) fs.cpSync(path.join(root, 'public'), dist, { recursive: true });
-const head = '<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="FinTech · 金融市场状态监控平台 · 合成数据交互演示"><title>FinTech · 市场状态监控</title>';
+const head = '<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="description" content="FinTech · 金融市场状态监控平台 · 沪深 300 历史回放"><title>FinTech · 市场状态监控</title>';
 fs.writeFileSync(path.join(dist, 'index.html'), `${head}<link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./assets/style.css"></head><body><div id="root"></div><script src="./assets/app.js"></script></body></html>`);
 fs.writeFileSync(path.join(root, 'RegimeLab-preview.html'), `${head}<style>${css.replaceAll('</style', '<\\/style')}</style></head><body><div id="root"></div><script>${app.replaceAll('</script', '<\\/script')}</script></body></html>`);
-console.log(`Built ${files.length} source modules → dist/ and RegimeLab-preview.html (${Math.round(app.length / 1024)} KB JavaScript).`);
+console.log(`Built ${files.size} source modules → dist/ and RegimeLab-preview.html (${Math.round(app.length / 1024)} KB JavaScript).`);

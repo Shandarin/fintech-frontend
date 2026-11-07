@@ -1,6 +1,6 @@
 import type { PersistedState } from '../types';
-import { initialState } from '../data/mock';
-export const STORAGE_KEY = 'regimelab.demo.v1';
+import { initialState } from '../data/workspace';
+export const STORAGE_KEY = 'regimelab.workspace.v1';
 export function readState(): PersistedState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY); if (!raw) return initialState();

@@ -71,7 +71,7 @@ export const compactNumber = (n: number) => n >= 1e8 ? `${number(n / 1e8, 2)} äº
 export function timeLabel(value: string) { const d = new Date(value); return Number.isNaN(d.getTime()) ? value : d.toLocaleString('zh-CN', { hour12: false, month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); }
 export const uid = (prefix = 'id') => `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 /** UTC date-only arithmetic avoids local timezone drift. */
-export function daysBefore(date: string, days: number) { const d = new Date(`${date}T00:00:00Z`); d.setUTCDate(d.getUTCDate() - days); return d.toISOString().slice(0, 10); }
+export function daysBefore(date: string, days: number) { if (!date) return ''; const d = new Date(`${date}T00:00:00Z`); d.setUTCDate(d.getUTCDate() - days); return d.toISOString().slice(0, 10); }
 export interface PcaResult { points: { x: number; y: number; label: string; regime: Regime }[]; variance: [number, number]; loadings: number[][]; }
 /** Small local PCA demonstration, not a fitted production market-state model. */
 export function calculatePca(samples: { values: number[]; label: string; regime: Regime }[]): PcaResult {

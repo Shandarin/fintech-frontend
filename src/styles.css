@@ -46,3 +46,16 @@ html{scrollbar-width:thin;scrollbar-color:#b4bdc7 #f7f9fc}html::-webkit-scrollba
 @media(max-width:760px){.sidebar-toggle{display:none}}
 
 .workspace{margin:22px 5px 20px;color:#fff;font-size:13px;line-height:1.5}.sidebar-header .brand strong{font-size:18px}.sidebar-header .brand-symbol{width:32px;height:32px}.sidebar-header .brand-home{padding-left:0;padding-right:0}
+
+.economic-week-scroll { overflow-x: auto; margin-top: 18px; }
+.economic-week { display: grid; grid-template-columns: repeat(7, minmax(150px, 1fr)); gap: 2px; align-items: stretch; }
+.economic-day { min-width: 0; }
+.economic-day h3 { margin: 0; padding: 14px 8px; background: #e1e9fd; color: #4877db; text-align: center; font-size: 15px; font-weight: 500; }
+.economic-day ul { list-style: none; margin: 0; padding: 0; }
+.economic-day li { padding: 10px 9px; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.economic-day li:nth-child(even) { background: #f3f4fa; }
+.economic-day li strong { margin-left: 8px; font-variant-numeric: tabular-nums; font-weight: 500; white-space: nowrap; }
+.economic-day-today { background: #ffe8c7; }
+.economic-day-today h3 { background: #f7931b; color: #fff; }
+.economic-day-today li { color: #995b17; }
+.economic-day-today li:nth-child(even) { background: #fac575; }

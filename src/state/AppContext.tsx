@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import type { Alert, Asset, PersistedState, Route, StreamEvent, User } from '../types';
-import { ASSETS, SNAPSHOT, initialState } from '../data/mock';
+import { ASSETS, SNAPSHOT, initialState } from '../data/workspace';
 import { canAdmin, canWrite, daysBefore, metrics, ruleMatches, sampleRegime, uid, visibleAssets } from '../lib/analytics';
 import { readState, writeState } from '../lib/storage';
 type Toast = { id: string; message: string; tone: 'success' | 'error' | 'info' };

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../state/AppContext';
-import { DATES, SNAPSHOT } from '../data/mock';
+import { DATES, SNAPSHOT } from '../data/workspace';
 import { daysBefore } from '../lib/analytics';
 import { Button, Field, Modal, Notice } from './ui';
 export function DateRange() {

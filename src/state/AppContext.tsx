@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import type { Asset, PersistedState, Route, StreamEvent, User } from '../types';
-import { initialState } from '../data/workspace';
+import { initialState } from './defaultState';
+import { ROUTES } from '../config/navigation';
 import { readState, writeState } from '../lib/storage';
 
 type Toast = { id: string; message: string; tone: 'success' | 'error' | 'info' };
@@ -16,10 +17,9 @@ interface Store {
   reset: () => void;
 }
 const Context = createContext<Store | null>(null);
-const routes: Route[] = ['overview', 'data', 'features', 'regimes', 'alerts', 'quality', 'lineage', 'system', 'api', 'settings'];
 const routeFromHash = (): Route => {
   const value = location.hash.replace(/^#\/?/, '').split('?')[0];
-  return routes.includes(value as Route) ? value as Route : 'overview';
+  return ROUTES.includes(value as Route) ? value as Route : 'overview';
 };
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<PersistedState>(readState);

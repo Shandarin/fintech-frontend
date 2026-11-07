@@ -3,7 +3,6 @@ import { Badge, Button, Card, Field, Info, Modal, Notice, PageHead } from '../co
 import { Icon } from '../components/Icon';
 import { requestJson } from '../services/httpClient';
 import { downloadFile } from '../lib/files';
-import './tools-pages.css';
 
 type Endpoint = {label:string; base:string; path:string};
 const ENDPOINTS:Endpoint[] = [

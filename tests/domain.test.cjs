@@ -1,9 +1,9 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const a = require('../.test-build/src/lib/analytics.js');
+const a = require('../.test-build/tests/fixtures/analytics.js');
 const f = require('../.test-build/src/lib/files.js');
-const { ASSETS, DATES, DEMO_USERS, initialState } = require('../.test-build/src/data/mock.js');
-const { mockRequest, resetRateLimits, WORKSPACE_QUERY } = require('../.test-build/src/services/mockApi.js');
+const { ASSETS, DATES, DEMO_USERS, initialState } = require('../.test-build/tests/fixtures/mock.js');
+const { mockRequest, resetRateLimits, WORKSPACE_QUERY } = require('../.test-build/tests/fixtures/mockApi.js');
 const close = (x, y, tolerance = 1e-8) => assert.ok(Math.abs(x - y) < tolerance, `${x} ≈ ${y}`);
 const points = (...prices) => prices.map((close, i) => ({ close, date: `2026-01-${String(i+1).padStart(2,'0')}`, volume: 1 }));
 test('mean and sample standard deviation', () => { close(a.mean([1,2,3]),2);close(a.stdev([1,2,3]),1);assert.equal(a.stdev([]),0); });

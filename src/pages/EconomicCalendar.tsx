@@ -1,5 +1,6 @@
+import { RetryNotice, LoadingStatus } from '../components/RequestStatus';
 import React, { useEffect, useState } from 'react';
-import { Button, Card, Field, IconButton, Notice } from '../components/ui';
+import { Button, Card, Field, IconButton } from '../components/ui';
 import { Icon } from '../components/Icon';
 import { requestJson } from '../services/httpClient';
 
@@ -97,8 +98,8 @@ export default function EconomicCalendar(): React.ReactElement {
         <IconButton icon="refresh" label="刷新经济日历" disabled={loading || initialLoading} onClick={retry} />
       </div>
     </div>
-    {(error || initialError) && <Notice tone="warning"><span>{error || initialError}</span><Button variant="ghost" onClick={retry}>重试</Button></Notice>}
-    {(loading || initialLoading) && <div className="market-loading" role="status"><Icon name="refresh" className="spin" size={16} />正在加载日历</div>}
+    {(error || initialError) && <RetryNotice message={error || initialError} onRetry={retry}/>}
+    {(loading || initialLoading) && <LoadingStatus message="正在加载日历"/>}
     {available.length > 0 && <Card className="economic-agenda">
       {available.map(({ day, events }) => <section className={`agenda-day${day === today ? ' agenda-today' : ''}`} key={day} aria-label={day}>
         <header className="agenda-date"><time dateTime={day} aria-current={day === today ? 'date' : undefined}><span>周{'日一二三四五六'[new Date(day + 'T12:00:00').getDay()]}</span><strong>{Number(day.slice(8))}</strong><small>{Number(day.slice(5, 7))} 月</small></time></header>

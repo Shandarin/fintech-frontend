@@ -1,27 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { Route } from '../types';
 import { useApp } from '../state/AppContext';
 import { Brand, Icon } from './Icon';
 import { Button, IconButton, Modal, SearchBox } from './ui';
 import { pages } from '../services/pagedApi';
+import { NAV, SEARCH_DESTINATIONS } from '../config/navigation';
+import { assetFromApi, type AssetRow } from '../features/market/assets';
 
-export const NAV: { route: Route; name: string; icon: string; group: string }[] = [
-  { route: 'overview', name: '市场总览', icon: 'grid', group: 'market' },
-  { route: 'data', name: '行情中心', icon: 'chart', group: 'market' },
-  { route: 'features', name: '市场研究', icon: 'activity', group: 'market' },
-  { route: 'regimes', name: '市场回放', icon: 'play', group: 'market' },
-  { route: 'quality', name: '数据管理', icon: 'database', group: 'tools' },
-  { route: 'lineage', name: '数据溯源', icon: 'branch', group: 'tools' },
-  { route: 'api', name: 'API 访问', icon: 'code', group: 'tools' },
-  { route: 'settings', name: '显示设置', icon: 'settings', group: 'tools' },
-];
-const destinations = [
-  ...NAV.map(n => ({ ...n, href: `#/${n.route}` })),
-  { name: '宏观指标', icon: 'globe', href: '#/data?tab=macro' },
-  { name: '经济日历', icon: 'calendar', href: '#/data?tab=calendar' },
-  { name: '资讯研报', icon: 'book', href: '#/data?tab=news' },
-];
-type SearchAsset = { asset_id: string; metadata: string };
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const app = useApp();
@@ -29,7 +13,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [mobile, setMobile] = useState(false);
   const [search, setSearch] = useState(false);
   const [query, setQuery] = useState('');
-  const [catalog, setCatalog] = useState<SearchAsset[]>([]);
+  const [catalog, setCatalog] = useState<AssetRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchError, setSearchError] = useState(false);
   const [notices, setNotices] = useState(false);
@@ -66,13 +50,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
     if (!search) return;
     const c = new AbortController();
     setLoading(true); setSearchError(false); setCatalog([]);
-    pages<SearchAsset>('market-api/v1/assets', c.signal).then(rows => {
+    pages<AssetRow>('market-api/v1/assets', c.signal).then(rows => {
       if (c.signal.aborted) return;
       setCatalog(rows.filter(row => {
-        try {
-          const meta = JSON.parse(row.metadata);
-          return ['close', 'yield'].includes(meta.字段) && meta.大类 !== '示例';
-        } catch { return false; }
+        try { return assetFromApi(row) !== null; }
+        catch { return false; }
       }));
     }).catch(() => { if (!c.signal.aborted) setSearchError(true); })
       .finally(() => { if (!c.signal.aborted) setLoading(false); });
@@ -80,7 +62,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   }, [search]);
   const closeMenus = () => { setMobile(false); setToolsOpen(false); setSearch(false); };
   const term = query.trim().toLowerCase();
-  const links = destinations.filter(n => !term || n.name.toLowerCase().includes(term));
+  const links = SEARCH_DESTINATIONS.filter(n => !term || n.name.toLowerCase().includes(term));
   const assetResults = term ? catalog.filter(a => a.asset_id.toLowerCase().includes(term)).slice(0, 12) : [];
 
   return <div className="app-shell">

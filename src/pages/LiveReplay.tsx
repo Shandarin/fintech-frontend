@@ -1,104 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, Card, Field, Info, Stat } from '../components/ui';
 import { TimeChart } from '../components/charts';
-import { requestJson } from '../services/httpClient';
+import { read } from '../services/replay';
+import { ordered, modelFrom, sessionFrom, predictionFrom, observationFrom, featureLabels, featureTitle, statusTitle, type Session, type Model, type Snapshot } from '../features/replay/model';
 import { pages } from '../services/pagedApi';
 import { downloadCsv } from '../lib/files';
-import './research-pages.css';
+import { percent } from '../lib/format';
+import { isFiniteNumber, isRecord, isDate } from '../lib/validation';
+import { PRIMARY_SERIES_COLOR, STATE_COLORS } from '../styles/palette';
+import { readSessionSelection as loadStored, writeSessionSelection as saveStored } from '../lib/sessionStorage';
 
 const sessionKey = 'hs300-replay-session';
 const modelKey = 'market-replay-model';
-const stateColors = ['#ea6b17', '#8666ba', '#298c8c', '#b88319'];
-const statusNames: Record<string, string> = {
-  QUEUED: '排队中', RUNNING: '回放中', PAUSED: '已暂停', DRAINING: '收尾中',
-  COMPLETED: '已完成', FAILED: '回放失败', CANCELLED: '已取消', STOPPED: '已停止',
-};
-const featureLabels: Record<string, string> = {
-  return_1d: '单日对数收益率', momentum_5d: '5 日动量', momentum_20d: '20 日动量',
-  volatility_20d: '20 日年化波动率', ma_deviation_20d: '20 日均线偏离', drawdown_60d: '60 日回撤',
-};
-type Session = {
-  start_date: string; end_date: string; session_id: string; model_id: string; status: string;
-  result_count?: number; expected_results?: number; warmup_count?: number; warmup_required?: number; error?: string;
-};
-type Model = {
-  model_id: string; asset_id: string; training_end?: string; replay_start?: string; replay_end?: string;
-  feature_names: string[]; feature_version?: string;
-};
-type Prediction = { state_id: number; business_date: string; close: string; state_name: string; probabilities: (number | null)[] };
-type Observation = { business_date: string; features: Record<string, number> };
-type Snapshot = { sessionId: string; rows: Prediction[]; observations: Observation[] };
-const percent = (value: number) => (100 * value).toFixed(2) + '%';
-const isFiniteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value);
-const isRecord = (value: unknown): value is Record<string, unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
-const isText = (value: unknown): value is string => typeof value === 'string' && value.trim() !== '';
-const featureTitle = (key: string) => Object.hasOwn(featureLabels, key) ? featureLabels[key] : key;
-const statusTitle = (key: string) => Object.hasOwn(statusNames, key) ? statusNames[key] : key;
-const decimal = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?$/i;
-function isDate(value: unknown): value is string {
-  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const date = new Date(value + 'T00:00:00Z');
-  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
-}
-function numericText(value: unknown): string | undefined {
-  if (isFiniteNumber(value)) return String(value);
-  if (typeof value !== 'string' || !decimal.test(value.trim()) || !Number.isFinite(Number(value))) return undefined;
-  return value.trim();
-}
-function modelFrom(value: unknown): Model | undefined {
-  if (!isRecord(value) || !isText(value.model_id) || !isText(value.asset_id)) return undefined;
-  return {
-    model_id: value.model_id, asset_id: value.asset_id,
-    training_end: isDate(value.training_end) ? value.training_end : undefined,
-    replay_start: isDate(value.replay_start) ? value.replay_start : undefined,
-    replay_end: isDate(value.replay_end) ? value.replay_end : undefined,
-    feature_names: Array.isArray(value.feature_names) ? value.feature_names.filter(isText) : [],
-    feature_version: isText(value.feature_version) ? value.feature_version : undefined,
-  };
-}
-function sessionFrom(value: unknown): Session | undefined {
-  if (!isRecord(value) || !isText(value.session_id) || !isText(value.model_id) || !isText(value.status) ||
-      !isDate(value.start_date) || !isDate(value.end_date) || value.start_date > value.end_date) return undefined;
-  const count = (item: unknown) => isFiniteNumber(item) && Number.isInteger(item) && item >= 0 ? item : undefined;
-  return {
-    session_id: value.session_id, model_id: value.model_id, status: value.status,
-    start_date: value.start_date, end_date: value.end_date,
-    result_count: count(value.result_count), expected_results: count(value.expected_results),
-    warmup_count: count(value.warmup_count), warmup_required: count(value.warmup_required),
-    error: isText(value.error) ? value.error : undefined,
-  };
-}
-function predictionFrom(value: unknown): Prediction | undefined {
-  if (!isRecord(value) || !isDate(value.business_date) || !isText(value.state_name) ||
-      !isFiniteNumber(value.state_id) || !Number.isInteger(value.state_id) || value.state_id < 0) return undefined;
-  const close = numericText(value.close);
-  if (close === undefined) return undefined;
-  return {
-    business_date: value.business_date, close, state_id: value.state_id, state_name: value.state_name,
-    // Preserve vector indices when an individual probability is missing or invalid.
-    probabilities: Array.isArray(value.probabilities) ? value.probabilities.map(item =>
-      isFiniteNumber(item) && item >= 0 && item <= 1 ? item : null) : [],
-  };
-}
-function observationFrom(value: unknown): Observation | undefined {
-  if (!isRecord(value) || !isDate(value.business_date) || !isRecord(value.features)) return undefined;
-  const features = Object.fromEntries(Object.entries(value.features).filter((entry): entry is [string, number] =>
-    isFiniteNumber(entry[1]) && (!Object.hasOwn(featureLabels, entry[0]) || Number.isFinite(entry[1] * 100))));
-  return Object.keys(features).length ? { business_date: value.business_date, features } : undefined;
-}
-const loadStored = (key: string) => { try { return sessionStorage.getItem(key) || ''; } catch { return ''; } };
-function saveStored(key: string, value: string) { try { sessionStorage.setItem(key, value); } catch { /* Optional convenience. */ } }
-function ordered<T extends { business_date: string }>(rows: T[]): T[] {
-  return [...new Map(rows.map(row => [row.business_date, row])).values()].sort((a, b) => a.business_date.localeCompare(b.business_date));
-}
-async function read<T>(path: string, signal?: AbortSignal, body?: unknown): Promise<T> {
-  const result = await requestJson('/api/v1', path, { method: body === undefined ? 'GET' : 'POST', body, signal });
-  if (result.status < 200 || result.status >= 300) {
-    throw Object.assign(new Error((result.body as { error?: { message?: string } })?.error?.message || 'HTTP ' + result.status), { status: result.status });
-  }
-  return result.body as T;
-}
-
+const stateColors = STATE_COLORS;
 export default function LiveReplay({ section }: { section: string }): React.ReactElement {
   const [id, setId] = useState(() => loadStored(sessionKey));
   const [modelId, setModelId] = useState(() => loadStored(modelKey));
@@ -310,7 +224,7 @@ export default function LiveReplay({ section }: { section: string }): React.Reac
             <option value="">最新交易日</option>{rows.map(row => <option key={row.business_date}>{row.business_date}</option>)}
           </select></Field>
         </div>
-        <TimeChart labels={rows.map(row => row.business_date)} series={[{ name: '收盘', values: rows.map(row => Number(row.close)), color: '#ea6b17' }]} unit="" height={310}/>
+        <TimeChart labels={rows.map(row => row.business_date)} series={[{ name: '收盘', values: rows.map(row => Number(row.close)), color: PRIMARY_SERIES_COLOR }]} unit="" height={310}/>
         <div className="replay-state-strip" aria-label="每日市场状态">{rows.map(row => <span key={row.business_date} style={{ background: stateColors[row.state_id % stateColors.length] }} title={`${row.business_date} · ${row.state_name}`}/>)}</div>
         <div className="research-chart-foot"><div className="research-legend">{states.map(([stateId, name]) => <span key={stateId}><i style={{ background: stateColors[stateId % stateColors.length] }}/>{name}</span>)}</div><span>{selected.business_date}</span></div>
       </Card>
@@ -344,7 +258,7 @@ export default function LiveReplay({ section }: { section: string }): React.Reac
           <Stat label="区间最低" value={formatFeature(featureValues.reduce((minimum, value) => Math.min(minimum, value)))}/>
         </div>
         <Card title={featureTitle(selectedKey)} className="research-history-card" action={<div className="row-actions"><div className="research-view-switch" role="group" aria-label="特征展示方式"><button type="button" aria-pressed={view === 'chart'} className={view === 'chart' ? 'selected' : ''} onClick={() => setView('chart')}>走势</button><button type="button" aria-pressed={view === 'table'} className={view === 'table' ? 'selected' : ''} onClick={() => setView('table')}>明细</button></div><Button icon="download" variant="ghost" onClick={() => downloadCsv('市场研究-特征.csv', ['日期', '标的', '特征', '原始数值'], featureSeries.map(row => [row.business_date, model?.asset_id || '', featureTitle(selectedKey), row.features[selectedKey]]))}>导出</Button></div>}>
-          {view === 'chart' ? <div className="card-inner"><TimeChart labels={featureSeries.map(row => row.business_date)} series={[{ name: featureTitle(selectedKey), values: featureValues.map(value => knownPercent ? value * 100 : value), color: '#ea6b17' }]} height={320} unit={knownPercent ? '%' : ''}/></div> : <div className="table-scroll research-detail-table"><table className="data-table"><thead><tr><th>交易日</th><th className="numeric">{featureTitle(selectedKey)}</th><th>市场状态</th></tr></thead><tbody>{featureSeries.map(row => <tr key={row.business_date}><td>{row.business_date}</td><td className="numeric">{formatFeature(row.features[selectedKey])}</td><td>{rows.find(state => state.business_date === row.business_date)?.state_name}</td></tr>)}</tbody></table></div>}
+          {view === 'chart' ? <div className="card-inner"><TimeChart labels={featureSeries.map(row => row.business_date)} series={[{ name: featureTitle(selectedKey), values: featureValues.map(value => knownPercent ? value * 100 : value), color: PRIMARY_SERIES_COLOR }]} height={320} unit={knownPercent ? '%' : ''}/></div> : <div className="table-scroll research-detail-table"><table className="data-table"><thead><tr><th>交易日</th><th className="numeric">{featureTitle(selectedKey)}</th><th>市场状态</th></tr></thead><tbody>{featureSeries.map(row => <tr key={row.business_date}><td>{row.business_date}</td><td className="numeric">{formatFeature(row.features[selectedKey])}</td><td>{rows.find(state => state.business_date === row.business_date)?.state_name}</td></tr>)}</tbody></table></div>}
         </Card>
       </>}
     </>}

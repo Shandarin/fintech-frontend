@@ -1,0 +1,7 @@
+:root {
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--ink); background: #fff; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased;
+  --bg: #ffffff; --surface: #ffffff; --surface-soft: #f4f5f7; --ink: #17212a; --text: #394650; --muted: #62717b;
+  --border: #e1e5ea; --grid: #edf0f2; --brand: #F0520F; --accent: #F0520F; --accent-dark: #cc4108; --accent-soft: #f5f7f8;
+  --positive: #16834b; --negative: #ce3d3d; --amber: #986417; --radius: 6px; --shadow: 0 5px 20px #17212a12;
+}

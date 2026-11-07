@@ -1,24 +1,25 @@
+import { RetryNotice, LoadingStatus } from '../components/RequestStatus';
 import React, { useEffect, useMemo, useState } from 'react';
-import { AssetNews, normaliseQuoteRows } from './MarketResearch';
-import { Button, Card, Field, IconButton, Notice } from '../components/ui';
+import { AssetNews } from '../features/documents/Documents';
+import { hasQuoteValue, normaliseQuoteRows } from '../features/market/quotes';
+import { Button, Card, Field, IconButton } from '../components/ui';
 import { Icon } from '../components/Icon';
 import MarketChart, { type Quote } from '../components/MarketChart';
 import { pages } from '../services/pagedApi';
 import { downloadCsv } from '../lib/files';
 import { useApp } from '../state/AppContext';
+import { normaliseAssets, type AssetRow, type MarketAsset } from '../features/market/assets';
 
-type AssetRow = { asset_id: string; metadata: string };
-type Asset = { id: string; group: string; metric: string };
 type Session = { session_id: string; start_date: string; end_date: string; result_count: number; model_id: string };
 type StateRow = { business_date: string; state_name: string; state_id: number };
 
 const classes: Record<string, string> = { 中国权益: 'equity', 全球权益: 'equity', 全球债券: 'bond', 外汇: 'fx', 大宗商品: 'commodity' };
 const assetFromLocation = () => new URLSearchParams(location.hash.split('?')[1] || '').get('asset') || '';
-const hasValue = (row: Quote) => row.value != null && String(row.value).trim() !== '' && Number.isFinite(Number(row.value));
+const hasValue = hasQuoteValue;
 
 export default function HistoricalQuotes(): React.ReactElement {
   const app = useApp();
-  const [catalog, setCatalog] = useState<Asset[]>([]);
+  const [catalog, setCatalog] = useState<MarketAsset[]>([]);
   const [asset, setAsset] = useState(assetFromLocation);
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState('');
@@ -60,14 +61,7 @@ export default function HistoricalQuotes(): React.ReactElement {
     setCatalogLoading(true);
     setCatalogError('');
     pages<AssetRow>('market-api/v1/assets', controller.signal).then(items => {
-      const next: Asset[] = [];
-      for (const item of items) {
-        const meta = JSON.parse(item.metadata) as Record<string, unknown>;
-        if (!meta || typeof meta !== 'object' || Array.isArray(meta) || typeof item.asset_id !== 'string' || !item.asset_id.trim()) throw new Error('Invalid asset metadata');
-        if (['close', 'yield'].includes(String(meta.字段)) && meta.大类 !== '示例') {
-          next.push({ id: item.asset_id, group: typeof meta.大类 === 'string' ? meta.大类 : '', metric: String(meta.字段) });
-        }
-      }
+      const next = normaliseAssets(items);
       if (!controller.signal.aborted) { setCatalog(next); setGroup(value => next.some(item => item.group === value) ? value : ''); }
     }).catch(() => {
       if (!controller.signal.aborted) { setCatalog([]); setCatalogError('资产目录暂时无法加载'); }
@@ -139,11 +133,8 @@ export default function HistoricalQuotes(): React.ReactElement {
   }
 
   return <>
-    <div className="market-controls market-controls-end">
-      <Button icon="refresh" busy={catalogLoading || loading} onClick={() => setReload(value => value + 1)}>刷新</Button>
-    </div>
-    {catalogError && <Notice tone="warning"><span>{catalogError}</span><Button variant="ghost" onClick={() => setReload(value => value + 1)}>重试</Button></Notice>}
-    {catalogLoading && !assets.length && <div className="market-loading" role="status"><Icon name="refresh" className="spin" size={16} />正在加载</div>}
+    {catalogError && <RetryNotice message={catalogError} onRetry={() => setReload(value => value + 1)}/>}
+    {catalogLoading && !assets.length && <LoadingStatus message="正在加载"/>}
     {!!assets.length && <div className="market-layout">
       <aside className="market-asset-panel" aria-label="资产列表">
         <div className="market-list-switch" role="group" aria-label="资产范围">
@@ -164,8 +155,8 @@ export default function HistoricalQuotes(): React.ReactElement {
         </div>
       </aside>
       <div className="market-detail">
-        {error && <Notice tone="warning"><span>{error}</span><Button variant="ghost" onClick={() => setReload(value => value + 1)}>重试</Button></Notice>}
-        {loading && <div className="market-loading" role="status"><Icon name="refresh" className="spin" size={16} />正在加载行情</div>}
+        {error && <RetryNotice message={error} onRetry={() => setReload(value => value + 1)}/>}
+        {loading && <LoadingStatus message="正在加载行情"/>}
         {last && id && <Card className="market-quote-card">
           <div className="quote-heading">
             <div>
@@ -175,10 +166,11 @@ export default function HistoricalQuotes(): React.ReactElement {
               </div>
               <div className="quote-asof">{label} · <time dateTime={last.business_date}>{last.business_date}</time></div>
             </div>
-            <div className="quote-actions"><Button icon="download" onClick={() => downloadCsv(`${id}-历史行情.csv`, ['日期', label, '日收益率'], rows.map(row => [row.business_date, row.value, row.daily_return]))}>导出全部</Button></div>
-          </div>
+            <div className="quote-tools"><div className="quote-actions"><Button icon="download" onClick={() => downloadCsv(`${id}-历史行情.csv`, ['日期', label, '日收益率'], rows.map(row => [row.business_date, row.value, row.daily_return]))}>导出全部</Button><Button icon="refresh" busy={catalogLoading || loading} onClick={() => setReload(value => value + 1)}>刷新</Button></div>
           {sessions.length > 0 && <div className="quote-overlay-control"><Field label="状态叠加"><select value={session} onChange={event => setSession(event.target.value)}><option value="">不叠加</option>{sessions.map((item, index) => <option key={item.session_id} value={item.session_id}>{item.start_date} 至 {item.end_date}{sessions.some((other, otherIndex) => otherIndex !== index && other.start_date === item.start_date && other.end_date === item.end_date) ? ` · ${index + 1}` : ''}</option>)}</select></Field></div>}
-          {overlayError && <div className="quote-overlay-feedback"><Notice tone="warning"><span>{overlayError}</span><Button variant="ghost" onClick={() => setOverlayReload(value => value + 1)}>重试</Button></Notice></div>}
+            </div>
+          </div>
+          {overlayError && <div className="quote-overlay-feedback"><RetryNotice message={overlayError} onRetry={() => setOverlayReload(value => value + 1)}/></div>}
           <div className="market-chart-wrap"><MarketChart key={id} asset={id} rows={rows} states={states} label={label} /></div>
         </Card>}
         {id && <AssetNews key={id} asset={id} />}

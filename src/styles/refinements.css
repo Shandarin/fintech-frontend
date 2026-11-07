@@ -1,0 +1,84 @@
+/* Compact financial information hierarchy — pale grey separators, not tinted page cards. */
+:root { --ink-soft: #435362; --surface-quiet: #f5f6f8; --hairline: #edf0f3; }
+.content { padding: 16px 24px 26px; }
+.page-head, .overview-heading { margin-bottom: 12px; gap: 10px; }
+h1 { font-size: 21px; letter-spacing: -.35px; }
+h2 { font-size: 15px; }
+.header-inner { min-height: 52px; padding: 0 24px; gap: 22px; }
+.primary-nav { gap: 18px; }
+.primary-nav > a, .tools-trigger { min-height: 52px; font-size: 12.5px; }
+.brand strong { font-size: 20px; }
+.brand-symbol, .brand-symbol svg { width: 26px; height: 26px; }
+.tools-menu { top: 46px; }
+.global-search { min-height: 30px; }
+.btn { min-height: 30px; padding: 5px 10px; gap: 6px; font-size: 12px; }
+.btn-secondary { background: var(--surface-quiet); border-color: #d8dee4; color: #344352; }
+.btn-secondary:hover:not(:disabled) { background: #eaeef2; border-color: #c4cdd5; }
+.btn-neutral { background: #33485b; border-color: #33485b; color: #fff; }
+.btn-neutral:hover:not(:disabled) { background: #243747; border-color: #243747; }
+.btn-primary { background: #F0520F; border-color: #F0520F; }
+.btn-primary:hover:not(:disabled) { background: #ce4309; border-color: #ce4309; }
+.btn-ghost { color: #475767; }
+.btn-ghost:hover:not(:disabled) { color: #253544; background: var(--surface-quiet); }
+.icon-btn { width: 28px; height: 28px; padding: 4px; border-radius: 4px; }
+.icon-btn:hover:not(:disabled) { color: #344352; background: #eef1f4; }
+.card { margin-bottom: 10px; border-color: #e0e5ea; border-radius: 5px; }
+.card-head { padding: 9px 12px; min-height: 40px; border-bottom: 1px solid var(--hairline); }
+.card-head h3 { font-size: 13px; }
+.card-inner { padding: 10px 12px 12px; }
+.card > .card-inner:first-child { padding-top: 10px; }
+.card-bottom, .card-footnote { padding: 8px 12px; }
+.stats-grid, .replay-stat-grid, .research-stat-grid { gap: 7px; margin-bottom: 10px; }
+.stat-card { padding: 9px 11px; }
+.stat-value { font-size: 21px; margin-top: 3px; }
+.two-col, .overview-grid, .research-columns { gap: 10px; }
+.tabs { min-height: 33px; margin-bottom: 10px; gap: 20px; }
+.tabs > button { padding: 5px 1px 8px; font-size: 12px; }
+.section-heading { margin-bottom: 7px; }
+.section-heading h2 { font-size: 13px; }
+.section-toolbar { margin: 8px 0; }
+.form-grid { column-gap: 10px; }
+.field { margin-bottom: 8px; gap: 3px; }
+.search-box, input:not([type=checkbox]):not([type=range]):not([type=file]), select, textarea { min-height: 31px; }
+.filter-row, .head-actions, .row-actions, .badge-list { gap: 6px; }
+.data-table thead { background: #f5f6f8; }
+.data-table th { padding: 7px 10px; color: #526171; border-bottom: 1px solid #dce2e8; font-weight: 650; }
+.data-table td, .compact-density .data-table td { padding: 6px 10px; }
+.data-table tbody tr:nth-child(even) { background: #fcfcfd; }
+.data-table tbody tr:hover { background: #f1f4f6; }
+.table-footer { padding: 7px 11px; }
+.market-controls, .calendar-controls { gap: 8px; margin-bottom: 9px; }
+.market-layout { gap: 10px; grid-template-columns: 212px minmax(0, 1fr); }
+.market-detail, .research-page { gap: 9px; }
+.market-section { margin-top: 10px; }
+.research-controls { padding: 9px 11px; gap: 8px; }
+.research-controls-fields { gap: 8px; }
+.market-asset-item { min-height: 29px; padding: 4px 8px; }
+.preference-row, .lineage-lookup { padding: 10px 13px; }
+.api-console-layout { gap: 10px; }
+.api-catalog-list > button { padding: 7px 8px; }
+.app-footer { width: calc(100% - 48px); padding: 9px 0 13px; }
+/* Small, restrained secondary hues distinguish actions from price movement. */
+.badge { background: #f1f3f6; color: #425264; }
+.badge-green { background: #e9f5ee; color: #197041; }
+.badge-amber { background: #fff4e3; color: #926015; }
+.badge-purple { background: #f2eef9; color: #67518c; }
+.badge-red { background: #fff0ef; color: #b43a36; }
+@media (max-width: 1220px) {
+  .header-inner { padding: 0 16px; gap: 16px; }
+  .content { padding: 14px 16px 24px; }
+  .app-footer { width: calc(100% - 32px); }
+}
+@media (max-width: 800px) {
+  .market-layout { grid-template-columns: 1fr; }
+  .header-inner, .primary-nav > a, .tools-trigger { min-height: 52px; }
+}
+@media (max-width: 640px) {
+  .content { padding: 12px 11px 21px; }
+  .header-inner { padding: 0 11px; }
+  h1 { font-size: 19px; }
+  .card-head { padding: 8px 10px; }
+  .card-inner { padding: 9px 10px 10px; }
+  .app-footer { width: calc(100% - 22px); }
+  .data-table th, .data-table td, .compact-density .data-table td { padding: 6px 7px; }
+}

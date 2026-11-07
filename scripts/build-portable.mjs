@@ -45,7 +45,8 @@ for (const p of files) {
 }
 if (errors) process.exit(1);
 const runtime = fs.readFileSync(path.join(root, 'vendor/react-runtime.js'), 'utf8');
-const charts = fs.readFileSync(path.join(root, 'node_modules/highcharts/highstock.js'), 'utf8');
+const highstockInstall = path.join(root, 'node_modules/highcharts/highstock.js');
+const charts = fs.readFileSync(fs.existsSync(highstockInstall) ? highstockInstall : path.join(root, 'vendor/highstock.js'), 'utf8');
 const app = `${charts}\n${runtime}\n;(function(){'use strict';
 var modules={${modules.join(',\n')}};
 var cache={};
@@ -70,13 +71,24 @@ function load(id){
 }
 load('src/main.tsx');
 })();`;
-const css = [...styles].map(file => fs.readFileSync(file, 'utf8')).join('\n');
+function resolveCss(file, visiting = new Set()) {
+  if (visiting.has(file)) throw new Error('CSS @import loop at ' + file);
+  visiting.add(file);
+  const contents = fs.readFileSync(file, 'utf8');
+  const expanded = contents.replace(/@import\s+(?:url\()?['"]([^'"]+\.css)['"]\)?\s*;/g, (_, name) => {
+    const child = path.resolve(path.dirname(file), name);
+    if (!child.startsWith(path.join(root, 'src') + path.sep)) throw new Error('CSS import outside src: ' + name);
+    return resolveCss(child, new Set(visiting));
+  });
+  return `/* ${path.relative(root, file).replaceAll('\\','/')} */\n${expanded}`;
+}
+const css = [...styles].map(file => resolveCss(file)).join('\n');
 const dist = path.join(root, 'dist');
 fs.mkdirSync(path.join(dist, 'assets'), { recursive: true });
 fs.writeFileSync(path.join(dist, 'assets/app.js'), app);
 fs.writeFileSync(path.join(dist, 'assets/style.css'), css);
 if (fs.existsSync(path.join(root, 'public'))) fs.cpSync(path.join(root, 'public'), dist, { recursive: true });
-const head = '<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#f8f7f4"><meta name="description" content="FinTech · 行情、市场研究与历史回放"><title>市场总览 · FinTech</title>';
+const head = '<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#ffffff"><meta name="description" content="FinTech · 行情、市场研究与历史回放"><title>市场总览 · FinTech</title>';
 fs.writeFileSync(path.join(dist, 'index.html'), `${head}<link rel="icon" href="./favicon.svg"><link rel="stylesheet" href="./assets/style.css"></head><body><div id="root"></div><script src="./assets/app.js"></script></body></html>`);
 fs.writeFileSync(path.join(root, 'RegimeLab-preview.html'), `${head}<style>${css.replaceAll('</style', '<\\/style')}</style></head><body><div id="root"></div><script>${app.replaceAll('</script', '<\\/script')}</script></body></html>`);
 console.log(`Built ${files.size} source modules → dist/ and RegimeLab-preview.html (${Math.round(app.length / 1024)} KB JavaScript).`);

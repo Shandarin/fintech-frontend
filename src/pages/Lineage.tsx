@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Card, Field, Info, PageHead } from '../components/ui';
 import RecordSource from '../components/RecordSource';
-import './tools-pages.css';
 
 type Domain = 'market' | 'indicator' | 'document' | 'social';
 export default function Lineage() {

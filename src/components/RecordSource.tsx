@@ -1,10 +1,10 @@
+import { RetryNotice } from './RequestStatus';
 import React, { useEffect, useId, useState } from 'react';
-import { Button, Notice } from './ui';
+import { Button } from './ui';
+import { isRecord } from '../lib/validation';
 import { requestJson } from '../services/httpClient';
-import '../pages/tools-pages.css';
 
 type Origin = { source_locator?: unknown; batch_id?: unknown; object_key?: unknown };
-const isRecord = (value:unknown):value is Record<string,unknown> => value !== null && typeof value === 'object' && !Array.isArray(value);
 const textValue = (value:unknown) => typeof value === 'string' ? value : '';
 export default function RecordSource({ domain, recordId, asset, day, initialOpen = false }: {
   domain:'market'|'indicator'|'document'|'social'; recordId?:string; asset?:string; day?:string; initialOpen?:boolean;
@@ -71,7 +71,7 @@ export default function RecordSource({ domain, recordId, asset, day, initialOpen
     {!initialOpen && <Button icon="branch" variant="ghost" aria-expanded={open} aria-controls={contentId} onClick={() => setOpen(v => !v)}>{open ? '收起来源' : '查看来源'}</Button>}
     {open && <div id={contentId} className="record-source-details">
       {busy && <span className="tools-loading" role="status">读取中…</span>}
-      {error && <Notice tone="warning"><span>{error}</span><Button variant="ghost" onClick={() => setRetry(n => n + 1)}>重试</Button></Notice>}
+      {error && <RetryNotice message={error} onRetry={() => setRetry(n => n + 1)}/>}
       {source && <dl className="key-values">
         {source.file && <div><dt>原始文件</dt><dd>{source.file}</dd></div>}
         {source.location && <div><dt>文件内位置</dt><dd>{source.location}</dd></div>}

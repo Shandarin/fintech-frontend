@@ -1,7 +1,7 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { Icon } from './Icon';
 
-export function Button({ children, icon, variant = 'secondary', busy = false, className = '', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { icon?: string; variant?: 'primary' | 'secondary' | 'ghost' | 'danger'; busy?: boolean }) {
+export function Button({ children, icon, variant = 'secondary', busy = false, className = '', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { icon?: string; variant?: 'primary' | 'secondary' | 'ghost' | 'danger' | 'neutral'; busy?: boolean }) {
   return <button type="button" {...props} disabled={props.disabled || busy} className={`btn btn-${variant} ${className}`} aria-busy={busy}>{(icon || busy) && <Icon name={busy ? 'refresh' : icon!} size={16} className={busy ? 'spin' : ''}/>} {children}</button>;
 }
 export function IconButton({ icon, label, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { icon: string; label: string }) {

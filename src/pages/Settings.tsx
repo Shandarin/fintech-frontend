@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../state/AppContext';
 import { Button, Card, Info, Modal, PageHead, Toggle } from '../components/ui';
-import './tools-pages.css';
 
 export default function Settings() {
   const app = useApp();

@@ -1,0 +1,9 @@
+/* Single CSS entry: design tokens → foundations → page layouts → compact overrides. */
+@import './tokens.css';
+@import './foundation.css';
+@import './pages/market.css';
+@import './pages/research.css';
+@import './pages/tools.css';
+@import './density.css';
+@import './refinements.css';
+@import './dashboard.css';

@@ -2,8 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { PageHead, Tabs } from '../components/ui';
 import HistoricalQuotes from './HistoricalQuotes';
 import EconomicCalendar from './EconomicCalendar';
-import { Documents, Indicators } from './MarketResearch';
-import './market-pages.css';
+import { Documents } from '../features/documents/Documents';
+import { Indicators } from '../features/indicators/Indicators';
 
 const sections = [
   { id: 'history', label: '行情' },

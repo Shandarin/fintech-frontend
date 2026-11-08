@@ -78,7 +78,9 @@ test('navigation, chart palette and CSS theme have a single source of truth', ()
   assert.match(tokens,/--bg:\s*#ffffff/i);
   assert.match(tokens,/--accent:\s*#F0520F/i);
   const entry = fs.readFileSync(path.join(base,'index.css'),'utf8');
-  assert.equal((entry.match(/@import/g)||[]).length,8);
+  const imports=[...entry.matchAll(/@import '\.\/([^']+)'/g)].map(m=>m[1]);
+  assert.equal(new Set(imports).size,imports.length);
+  for(const file of imports) assert.ok(fs.existsSync(path.join(base,file)),file);
 });
 
 test('decimal-string daily returns preserve valid and missing values', () => {

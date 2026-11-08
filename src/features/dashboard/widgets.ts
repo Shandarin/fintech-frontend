@@ -1,6 +1,9 @@
 /** Dashboard configuration contains presentation choices only, never financial records. */
 export const DASHBOARD_WIDGETS = [
-  { id: 'benchmarks', title: '主要市场', icon: 'chart', span: 'full' },
+  { id: 'monitoring', title: '监控动态', icon: 'activity', span: 'narrow' },
+  { id: 'realtime-watchlist', title: '实时自选', icon: 'star', span: 'wide' },
+  { id: 'intraday', title: '当天走势', icon: 'activity', span: 'wide' },
+  { id: 'benchmarks', title: '指数行情', icon: 'chart', span: 'wide' },
   { id: 'performance', title: '市场表现', icon: 'activity', span: 'wide' },
   { id: 'regime', title: '沪深300 市场状态', icon: 'layers', span: 'narrow' },
   { id: 'documents', title: '最新资讯', icon: 'book', span: 'wide' },
@@ -45,4 +48,26 @@ export function shiftDashboardWidget(current: readonly string[], widget: string,
   const reordered = [...list];
   [reordered[index], reordered[index + delta]] = [reordered[index + delta], reordered[index]];
   return reordered;
+}
+
+
+export const DEFAULT_BENCHMARKS = ['沪深300', '标普500', 'COMEX黄金期货', '美元指数DXY'];
+export const benchmarkSpan = (count: number): 'narrow' | 'wide' | 'full' => count <= 2 ? 'narrow' : count <= 5 ? 'wide' : 'full';
+export function closeReturn(rows: readonly {value: string; daily_return: number | null}[]): number | null {
+  const last = rows.at(-1), previous = rows.at(-2);
+  if (typeof last?.daily_return === 'number' && Number.isFinite(last.daily_return)) return last.daily_return;
+  if (!last || !previous || !Number.isFinite(Number(last.value)) || !Number.isFinite(Number(previous.value)) || Number(previous.value) === 0) return null;
+  return Number(last.value) / Number(previous.value) - 1;
+}
+
+/** Full-width cards separate independently stacked wide/narrow columns. */
+export function dashboardColumns(ids: readonly DashboardWidgetId[], span: (id: DashboardWidgetId) => 'wide' | 'narrow' | 'full') {
+  const sections: {full?:DashboardWidgetId;wide:DashboardWidgetId[];narrow:DashboardWidgetId[]}[] = [];
+  for(const id of ids) {
+    const size=span(id);
+    if(size==='full'){sections.push({full:id,wide:[],narrow:[]});continue;}
+    if(!sections.length || sections.at(-1)!.full)sections.push({wide:[],narrow:[]});
+    sections.at(-1)![size].push(id);
+  }
+  return sections;
 }

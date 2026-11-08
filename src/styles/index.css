@@ -7,3 +7,5 @@
 @import './density.css';
 @import './refinements.css';
 @import './dashboard.css';
+@import './pages/realtime.css';
+@import './pages/monitoring.css';

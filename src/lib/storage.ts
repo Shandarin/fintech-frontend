@@ -19,6 +19,7 @@ export function readState(): PersistedState {
     // Versions before dashboardVersion did not render their stored demo widget IDs.
     // Ignore them rather than converting retired demo panels into live market panels.
     if (saved.dashboardVersion === 1) base.widgets = sanitizeDashboardWidgets(saved.widgets);
+    if (Array.isArray(saved.benchmarks)) base.benchmarks = [...new Set<string>(saved.benchmarks.filter((id: unknown): id is string => typeof id === 'string' && !!id.trim()))];
     // Old watchlist IDs identify synthetic assets, so only read the new key's entries.
     if (localStorage.getItem(STORAGE_KEY) && Array.isArray(saved.watchlist)) base.watchlist = [...new Set<string>(saved.watchlist.filter((id: unknown): id is string => typeof id === 'string'))];
   } catch { /* Unavailable or invalid browser storage must not prevent reading the market. */ }
@@ -26,7 +27,7 @@ export function readState(): PersistedState {
 }
 export function writeState(state: PersistedState): boolean {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ schema: 2, dashboardVersion: 1, prefs: { positiveGreen: state.prefs.positiveGreen, compact: state.prefs.compact }, widgets: state.widgets, watchlist: state.watchlist }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ schema: 2, dashboardVersion: 1, prefs: { positiveGreen: state.prefs.positiveGreen, compact: state.prefs.compact }, widgets: state.widgets, watchlist: state.watchlist, benchmarks: state.benchmarks }));
     return true;
   } catch { return false; }
 }

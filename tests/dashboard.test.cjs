@@ -49,3 +49,23 @@ test('dashboard preferences: selected IDs and order survive reload, malformed ID
   global.localStorage.setItem(storage.STORAGE_KEY, JSON.stringify({dashboardVersion:1,widgets:['tools',null,'nope','tools','shortcuts']}));
   assert.deepEqual(storage.readState().widgets,['tools','shortcuts']);
 });
+
+test('index panel spans grow at three and six cards; returns use previous close', () => {
+  assert.deepEqual([1,2,3,4,5,6,12].map(dashboard.benchmarkSpan), ['narrow','narrow','wide','wide','wide','full','full']);
+  assert.equal(dashboard.closeReturn([{value:'100',daily_return:null},{value:'110',daily_return:null}]), 110/100-1);
+  assert.equal(dashboard.closeReturn([{value:'0',daily_return:null},{value:'110',daily_return:null}]), null);
+  assert.equal(dashboard.closeReturn([{value:'100',daily_return:null}]), null);
+  localStore();
+  const state = storage.readState(); state.benchmarks = ['上证指数','标普500'];
+  storage.writeState(state); assert.deepEqual(storage.readState().benchmarks,state.benchmarks);
+  state.benchmarks = []; storage.writeState(state); assert.deepEqual(storage.readState().benchmarks,[]);
+});
+
+test('wide and narrow cards stack independently while full-width cards keep their place',()=>{
+  const {dashboardColumns}=require('../.test-build/src/features/dashboard/widgets.js');
+  const sizes={benchmarks:'wide',monitoring:'narrow',documents:'wide',shortcuts:'narrow',tools:'full',intraday:'wide'};
+  assert.deepEqual(dashboardColumns(Object.keys(sizes),id=>sizes[id]),[
+    {wide:['benchmarks','documents'],narrow:['monitoring','shortcuts']},
+    {full:'tools',wide:[],narrow:[]},{wide:['intraday'],narrow:[]}
+  ]);
+});

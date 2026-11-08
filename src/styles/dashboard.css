@@ -18,13 +18,19 @@
 .dashboard-editing:active { cursor: grabbing; }
 .dashboard-editing:focus-within { border-color: #75889c; }
 .dashboard-editing .dashboard-card-actions .icon-btn { color: #405365; }
-.dashboard-widget .benchmark-strip { border: 0; border-radius: 0; background: #fff; }
-.dashboard-widget .benchmark { padding: 10px 14px 11px; }
-.dashboard-widget .benchmark-value { margin-top: 6px; }
-.dashboard-widget .benchmark-value strong { font-size: 22px; }
-.dashboard-widget .benchmark-meta { font-size: 11px; margin-top: 3px; }
-.dashboard-widget .benchmark:nth-child(even) { background: #fafbfd; }
-.dashboard-widget .benchmark:hover { background: #f3f5f8; }
+.dashboard-widget .benchmark-strip { grid-template-columns: repeat(var(--benchmark-columns, 4), minmax(0, 1fr)); border: 0; border-radius: 0; background: #fff; }
+.dashboard-widget .benchmark { display:flex; align-items:center; gap:12px; padding:14px 12px; min-width:0; border:0; border-radius:10px; background:#f6f8fa; }
+.dashboard-widget .benchmark-strip { gap:6px; padding:8px; }
+.benchmark-summary { flex:1; min-width:0; }
+.benchmark-point { display:block; font-size:24px; font-weight:700; line-height:1.2; font-variant-numeric:tabular-nums; }
+.benchmark-caption { display:flex; align-items:baseline; flex-wrap:wrap; gap:3px 9px; margin-top:5px; font-size:12px; line-height:1.4; }
+.benchmark-caption > span { color:var(--ink); }
+.benchmark-caption > b { font-weight:650; white-space:nowrap; }
+.dashboard-widget .benchmark-up { color:var(--positive); background:color-mix(in srgb,var(--positive) 12%,white); }
+.dashboard-widget .benchmark-down { color:var(--negative); background:color-mix(in srgb,var(--negative) 12%,white); }
+.dashboard-widget .benchmark:hover { filter:brightness(.98); }
+.benchmark-mini { flex:0 0 64px; width:64px; }
+.benchmark-mini .sparkline { display:block; width:100%; height:34px; }
 .dashboard-chart-title { display: flex; align-items: center; flex-direction: row-reverse; justify-content: flex-end; gap: 7px; margin-bottom: 5px; }
 .dashboard-chart-title .chart-legend { margin: 0; gap: 12px; flex-wrap: wrap; }
 .dashboard-state > time { font-size: 11px; color: #71818e; }
@@ -74,8 +80,8 @@
 .dashboard-empty strong { font-size: 13px; font-weight: 600; }
 .dashboard-empty button { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; font-size: 12px; color: var(--accent); }
 @media (max-width: 1080px) {
-  .dashboard-span-wide { grid-column: span 7; }
-  .dashboard-span-narrow { grid-column: span 5; }
+  .dashboard-span-wide { grid-column: span 8; }
+  .dashboard-span-narrow { grid-column: span 4; }
 }
 @media (max-width: 820px) {
   .dashboard-span-wide, .dashboard-span-narrow { grid-column: span 12; }
@@ -98,3 +104,27 @@
   .dashboard-quick-links a { gap: 5px; font-size: 11px; }
   .dashboard-tools a { padding: 7px 10px; }
 }
+
+@media(max-width:640px){
+  .dashboard-widget .benchmark {padding:12px 10px;gap:8px}
+  .benchmark-point {font-size:21px}
+  .benchmark-mini {flex-basis:44px;width:44px}
+}
+
+.benchmark-picker { display:grid; gap:6px; max-height:50vh; overflow:auto; margin-top:12px; }
+.benchmark-picker button { display:flex; gap:10px; align-items:center; text-align:left; padding:9px; border:1px solid var(--border); border-radius:4px; }
+.benchmark-picker button > span:first-child { flex:1; }
+.benchmark-picker button[aria-pressed="true"] { color:var(--accent); }
+@media (min-width:641px) { .benchmark-mini { flex-basis:44px; width:44px; } }
+
+/* Columns own their vertical flow; cards in opposite columns never share rows. */
+.dashboard-column-group { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:10px; grid-column:1 / -1; align-items:start; }
+.dashboard-column { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.dashboard-column:empty { display:none; }
+.dashboard-column-group:has(.dashboard-primary:empty) { grid-template-columns:minmax(0,2fr) minmax(0,1fr); }
+.dashboard-column-group:has(.dashboard-primary:empty) .dashboard-secondary { grid-column:2; }
+@media(max-width:820px) {
+  .dashboard-column-group, .dashboard-column-group:has(.dashboard-primary:empty) {grid-template-columns:minmax(0,1fr);}
+  .dashboard-column-group:has(.dashboard-primary:empty) .dashboard-secondary {grid-column:1;}
+}
+@media(max-width:640px) {.dashboard-column-group,.dashboard-column {gap:8px;}}

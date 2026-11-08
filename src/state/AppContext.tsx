@@ -59,7 +59,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (permission !== 'self') { notify('此操作需要服务端授权', 'error'); return false; }
     setState(previous => {
       const next = fn(previous);
-      return { ...initialState(), prefs: { ...initialState().prefs, positiveGreen: next.prefs.positiveGreen, compact: next.prefs.compact }, widgets: next.widgets, watchlist: next.watchlist };
+      return { ...initialState(), prefs: { ...initialState().prefs, positiveGreen: next.prefs.positiveGreen, compact: next.prefs.compact }, widgets: next.widgets, watchlist: next.watchlist, benchmarks: next.benchmarks };
     });
     return true;
   }, [notify]);

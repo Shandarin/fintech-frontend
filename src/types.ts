@@ -2,7 +2,7 @@ export type AssetClass = 'equity' | 'bond' | 'commodity' | 'fx';
 export type Role = 'admin' | 'analyst' | 'viewer';
 export type Regime = 'bull' | 'range' | 'bear';
 export type Severity = 'high' | 'medium' | 'low';
-export type Route = 'overview' | 'data' | 'features' | 'regimes' | 'alerts' | 'quality' | 'lineage' | 'system' | 'api' | 'settings';
+export type Route = 'monitoring' | 'overview' | 'data' | 'features' | 'regimes' | 'alerts' | 'quality' | 'lineage' | 'system' | 'api' | 'settings';
 export interface PricePoint { date: string; close: number; volume: number; }
 export interface Asset { id: string; name: string; symbol: string; category: AssetClass; currency: string; source: string; prices: PricePoint[]; }
 export interface User { id: string; name: string; email: string; role: Role; allowedClasses: AssetClass[]; active: boolean; }
@@ -21,7 +21,7 @@ export interface Preferences { positiveGreen: boolean; compact: boolean; notific
 export interface Annotation { id: string; assetId: string; date: string; regime: Regime; note: string; author: string; }
 export interface PersistedState {
   annotations: Annotation[]; schema: 1; sessionUserId: string | null; users: User[]; rules: Rule[]; alerts: Alert[];
-  features: Feature[]; sources: DataSource[]; issues: QualityIssue[]; watchlist: string[];
+  features: Feature[]; sources: DataSource[]; issues: QualityIssue[]; watchlist: string[]; benchmarks: string[];
   widgets: string[]; prefs: Preferences; imports: ImportedDataset[]; checkpoints: Checkpoint[];
   audit: AuditEntry[]; modelVersion: string; apiLimit: number;
 }

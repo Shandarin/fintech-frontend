@@ -1,3 +1,5 @@
+import Monitoring from './pages/Monitoring';
+import {MonitorProvider} from './state/Monitoring';
 import React from 'react';
 import { AppProvider, useApp } from './state/AppContext';
 import { Shell } from './components/Shell';
@@ -11,10 +13,10 @@ import Lineage from './pages/Lineage';
 import System from './pages/System';
 import Api from './pages/Api';
 import Settings from './pages/Settings';
-const pages = {overview:Overview,data:MarketData,features:Features,regimes:Regimes,alerts:Alerts,quality:Quality,lineage:Lineage,system:System,api:Api,settings:Settings};
+const pages = {monitoring:Monitoring,overview:Overview,data:MarketData,features:Features,regimes:Regimes,alerts:Alerts,quality:Quality,lineage:Lineage,system:System,api:Api,settings:Settings};
 function Workspace() {
   const {route,activeAlert} = useApp();
   const Page = pages[route];
   return <Shell><Page/>{activeAlert && <AlertDetail key={activeAlert}/>}</Shell>;
 }
-export default function App() { return <AppProvider><Workspace/></AppProvider>; }
+export default function App() { return <AppProvider><MonitorProvider><Workspace/></MonitorProvider></AppProvider>; }

@@ -11,12 +11,13 @@ interface Props {
   onRemove: (id: DashboardWidgetId) => void;
   onMove: (id: DashboardWidgetId, direction: -1 | 1) => void;
   onDropWidget: (source: DashboardWidgetId, target: DashboardWidgetId) => void;
+  span?: 'narrow' | 'wide' | 'full';
   action?: React.ReactNode;
   children: React.ReactNode;
 }
-export function DashboardWidget({ id, editing, position, count, onRemove, onMove, onDropWidget, action, children }: Props) {
+export function DashboardWidget({ id, editing, position, count, onRemove, onMove, onDropWidget, action, children, span }: Props) {
   const definition = DASHBOARD_WIDGETS.find(item => item.id === id)!;
-  return <Card title={definition.title} className={`dashboard-widget dashboard-span-${definition.span} ${editing ? 'dashboard-editing' : ''}`}
+  return <Card title={definition.title} className={`dashboard-widget dashboard-span-${span || definition.span} ${editing ? 'dashboard-editing' : ''}`}
     data-widget-id={id} draggable={editing}
     onDragStart={event => { if (!editing) return; event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', id); }}
     onDragOver={event => { if (editing) { event.preventDefault(); event.dataTransfer.dropEffect = 'move'; } }}

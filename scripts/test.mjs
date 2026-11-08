@@ -8,11 +8,11 @@ const ts = require(process.env.TS_MODULE || 'typescript');
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const out = path.join(root, '.test-build');
 fs.rmSync(out, { recursive: true, force: true });
-for (const relative of ['src/types.ts','tests/fixtures/analytics.ts','src/lib/files.ts','tests/fixtures/mock.ts','tests/fixtures/mockApi.ts','src/services/httpClient.ts','src/services/market.ts','src/lib/validation.ts','src/lib/format.ts','src/features/market/quotes.ts','src/features/market/assets.ts','src/features/documents/model.ts','src/features/replay/model.ts','src/features/quality/model.ts','src/config/navigation.ts','src/styles/palette.ts','src/features/dashboard/widgets.ts','src/state/defaultState.ts','src/lib/storage.ts']) {
-  const compiled = ts.transpileModule(fs.readFileSync(path.join(root, relative), 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText;
-  const target = path.join(out, relative.replace(/\.ts$/, '.js'));
+for (const relative of ['src/components/Icon.tsx','src/state/Monitoring.tsx','src/types.ts','src/services/realtimeMarket.ts','tests/fixtures/analytics.ts','src/lib/files.ts','tests/fixtures/mock.ts','tests/fixtures/mockApi.ts','src/services/httpClient.ts','src/services/market.ts','src/lib/validation.ts','src/lib/format.ts','src/features/market/quotes.ts','src/features/market/assets.ts','src/features/documents/model.ts','src/features/replay/model.ts','src/features/quality/model.ts','src/config/navigation.ts','src/styles/palette.ts','src/features/dashboard/widgets.ts','src/state/defaultState.ts','src/lib/storage.ts']) {
+  const compiled = ts.transpileModule(fs.readFileSync(path.join(root, relative), 'utf8'), { compilerOptions: { esModuleInterop:true, jsx: ts.JsxEmit.React, target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.CommonJS } }).outputText;
+  const target = path.join(out, relative.replace(/\.tsx?$/, '.js'));
   fs.mkdirSync(path.dirname(target), { recursive: true });fs.writeFileSync(target, compiled);
 }
 fs.writeFileSync(path.join(out, 'package.json'), '{"type":"commonjs"}');
-const result = spawnSync(process.execPath, ['--test','tests/domain.test.cjs','tests/market.test.cjs','tests/refactor.test.cjs','tests/dashboard.test.cjs'], { cwd: root, stdio: 'inherit' });
+const result = spawnSync(process.execPath, ['--test','tests/domain.test.cjs','tests/market.test.cjs','tests/refactor.test.cjs','tests/dashboard.test.cjs','tests/realtimeMarket.test.cjs','tests/monitoring.test.cjs'], { cwd: root, stdio: 'inherit' });
 process.exit(result.status ?? 1);

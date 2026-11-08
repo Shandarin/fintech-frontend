@@ -1017,13 +1017,19 @@ h2 { font-size: 15px; }
 .dashboard-editing:active { cursor: grabbing; }
 .dashboard-editing:focus-within { border-color: #75889c; }
 .dashboard-editing .dashboard-card-actions .icon-btn { color: #405365; }
-.dashboard-widget .benchmark-strip { border: 0; border-radius: 0; background: #fff; }
-.dashboard-widget .benchmark { padding: 10px 14px 11px; }
-.dashboard-widget .benchmark-value { margin-top: 6px; }
-.dashboard-widget .benchmark-value strong { font-size: 22px; }
-.dashboard-widget .benchmark-meta { font-size: 11px; margin-top: 3px; }
-.dashboard-widget .benchmark:nth-child(even) { background: #fafbfd; }
-.dashboard-widget .benchmark:hover { background: #f3f5f8; }
+.dashboard-widget .benchmark-strip { grid-template-columns: repeat(var(--benchmark-columns, 4), minmax(0, 1fr)); border: 0; border-radius: 0; background: #fff; }
+.dashboard-widget .benchmark { display:flex; align-items:center; gap:12px; padding:14px 12px; min-width:0; border:0; border-radius:10px; background:#f6f8fa; }
+.dashboard-widget .benchmark-strip { gap:6px; padding:8px; }
+.benchmark-summary { flex:1; min-width:0; }
+.benchmark-point { display:block; font-size:24px; font-weight:700; line-height:1.2; font-variant-numeric:tabular-nums; }
+.benchmark-caption { display:flex; align-items:baseline; flex-wrap:wrap; gap:3px 9px; margin-top:5px; font-size:12px; line-height:1.4; }
+.benchmark-caption > span { color:var(--ink); }
+.benchmark-caption > b { font-weight:650; white-space:nowrap; }
+.dashboard-widget .benchmark-up { color:var(--positive); background:color-mix(in srgb,var(--positive) 12%,white); }
+.dashboard-widget .benchmark-down { color:var(--negative); background:color-mix(in srgb,var(--negative) 12%,white); }
+.dashboard-widget .benchmark:hover { filter:brightness(.98); }
+.benchmark-mini { flex:0 0 64px; width:64px; }
+.benchmark-mini .sparkline { display:block; width:100%; height:34px; }
 .dashboard-chart-title { display: flex; align-items: center; flex-direction: row-reverse; justify-content: flex-end; gap: 7px; margin-bottom: 5px; }
 .dashboard-chart-title .chart-legend { margin: 0; gap: 12px; flex-wrap: wrap; }
 .dashboard-state > time { font-size: 11px; color: #71818e; }
@@ -1073,8 +1079,8 @@ h2 { font-size: 15px; }
 .dashboard-empty strong { font-size: 13px; font-weight: 600; }
 .dashboard-empty button { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; font-size: 12px; color: var(--accent); }
 @media (max-width: 1080px) {
-  .dashboard-span-wide { grid-column: span 7; }
-  .dashboard-span-narrow { grid-column: span 5; }
+  .dashboard-span-wide { grid-column: span 8; }
+  .dashboard-span-narrow { grid-column: span 4; }
 }
 @media (max-width: 820px) {
   .dashboard-span-wide, .dashboard-span-narrow { grid-column: span 12; }
@@ -1097,6 +1103,70 @@ h2 { font-size: 15px; }
   .dashboard-quick-links a { gap: 5px; font-size: 11px; }
   .dashboard-tools a { padding: 7px 10px; }
 }
+
+@media(max-width:640px){
+  .dashboard-widget .benchmark {padding:12px 10px;gap:8px}
+  .benchmark-point {font-size:21px}
+  .benchmark-mini {flex-basis:44px;width:44px}
+}
+
+.benchmark-picker { display:grid; gap:6px; max-height:50vh; overflow:auto; margin-top:12px; }
+.benchmark-picker button { display:flex; gap:10px; align-items:center; text-align:left; padding:9px; border:1px solid var(--border); border-radius:4px; }
+.benchmark-picker button > span:first-child { flex:1; }
+.benchmark-picker button[aria-pressed="true"] { color:var(--accent); }
+@media (min-width:641px) { .benchmark-mini { flex-basis:44px; width:44px; } }
+
+/* Columns own their vertical flow; cards in opposite columns never share rows. */
+.dashboard-column-group { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); gap:10px; grid-column:1 / -1; align-items:start; }
+.dashboard-column { display:flex; flex-direction:column; gap:10px; min-width:0; }
+.dashboard-column:empty { display:none; }
+.dashboard-column-group:has(.dashboard-primary:empty) { grid-template-columns:minmax(0,2fr) minmax(0,1fr); }
+.dashboard-column-group:has(.dashboard-primary:empty) .dashboard-secondary { grid-column:2; }
+@media(max-width:820px) {
+  .dashboard-column-group, .dashboard-column-group:has(.dashboard-primary:empty) {grid-template-columns:minmax(0,1fr);}
+  .dashboard-column-group:has(.dashboard-primary:empty) .dashboard-secondary {grid-column:1;}
+}
+@media(max-width:640px) {.dashboard-column-group,.dashboard-column {gap:8px;}}
+
+/* src/styles/pages/realtime.css */
+.realtime-chart-toolbar {display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.realtime-chart-toolbar select {max-width:100%}
+.realtime-table-panel > [role="status"], .realtime-empty {margin:10px 14px}
+.realtime-table-scroll {overflow-x:auto}
+.realtime-table {width:100%;border-collapse:collapse;table-layout:fixed;font-variant-numeric:tabular-nums}
+.realtime-table th,.realtime-table td {padding:7px 10px;text-align:right;border-bottom:1px solid var(--hairline);vertical-align:middle}
+.realtime-table thead th {background:#f7f8fa;color:var(--muted);font-size:12px;font-weight:500;white-space:nowrap}
+.realtime-table thead th:first-child {width:23%;text-align:left}
+.realtime-table thead th:last-child {width:64px}
+.realtime-table thead select {border:0;background:transparent;padding:0;min-height:24px;width:auto;font-size:12px;color:inherit}
+.realtime-table thead button {font:inherit;color:inherit}
+.realtime-table tbody tr:last-child > * {border-bottom:0}
+.realtime-table tbody tr:hover {background:#fafbfc}
+.realtime-table tbody tr.selected {background:#fffaf6}
+.realtime-table tbody th {text-align:left;font-weight:400}
+.realtime-asset {display:flex;flex-direction:column;gap:2px;width:100%;min-width:0;text-align:left}
+.realtime-asset > strong {font-size:13px;font-weight:550;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.realtime-asset > span {font-size:11px;color:var(--muted)}
+.realtime-market-tag {display:inline-block;background:#edf1f6;color:#53677e;border-radius:2px;padding:0 3px;font-size:10px;font-weight:500;line-height:15px}
+.realtime-market-tag.tag-HK {background:#f3eaf9;color:#9755b3}
+.realtime-market-tag.tag-US {background:#eaf0ff;color:#536ed4}
+.realtime-current strong {font-size:14px;font-weight:650}
+.realtime-current small {display:block;margin-top:2px;color:var(--muted);font-size:10px;font-weight:400}
+.realtime-row-actions {display:flex;align-items:center;justify-content:flex-end;gap:8px}
+.realtime-row-actions .icon-btn {width:22px;height:22px;color:var(--muted)}
+.realtime-table .realtime-row-error {max-width:160px;margin-left:auto}
+.realtime-code-matches {display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+@media(max-width:820px){.realtime-table {min-width:700px}.realtime-table th,.realtime-table td {padding:7px 10px}}
+
+.realtime-table thead th {padding-top:7px;padding-bottom:7px}
+.realtime-table thead button {display:inline-flex;align-items:center;justify-content:flex-end;gap:3px}
+.realtime-table td,.realtime-table tbody th {height:49px}
+
+.realtime-change-up {color:var(--positive);font-weight:600}
+.realtime-change-down {color:var(--negative);font-weight:600}
+
+/* src/styles/pages/monitoring.css */
+.monitor-form{display:grid;grid-template-columns:1fr 1fr;gap:14px}.monitor-span{grid-column:1/-1}.monitor-form input:not([type=checkbox]),.monitor-form select,.monitor-form textarea{width:100%;min-width:0}.monitor-form label:has(input[type=checkbox]){display:flex;align-items:center;gap:7px;font-size:13px}.monitor-condition{display:grid;grid-template-columns:1.3fr 1fr 1fr auto;gap:8px;margin:10px 0}.monitor-muted,.monitor-table small{color:var(--text-muted,#78838f);font-size:12px}.monitor-error{color:#b73120;padding:10px 0}.monitor-search{display:flex;flex-wrap:wrap;gap:6px}.monitor-search button{padding:8px;border:1px solid #e3e7ec;border-radius:6px;background:#fff;text-align:left}.monitor-search small{display:block}.monitor-table-wrap{overflow-x:auto}.monitor-table{width:100%;border-collapse:collapse;font-size:13px}.monitor-table th{text-align:left;background:#f7f8fa;color:#737e89;font-weight:500}.monitor-table th,.monitor-table td{padding:10px 14px;border-bottom:1px solid #edf0f3;vertical-align:middle}.monitor-table td:first-child{max-width:260px}.monitor-table small{display:block;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px}.monitor-table .btn{font-size:12px;padding:5px 7px;min-height:28px}.monitor-empty{padding:22px;color:#78838f;font-size:13px}.monitor-widget{padding:0 14px 8px}.monitor-widget-actions{display:flex;gap:10px;align-items:center;font-size:11px;white-space:nowrap}.monitor-widget-actions > span{color:var(--muted)}.monitor-add{display:inline-flex;align-items:center;justify-content:center;width:25px;height:25px;border-radius:4px;color:var(--accent)}.monitor-add:hover{background:#fff0e8}.monitor-event-row{display:flex;width:100%;align-items:center;justify-content:space-between;gap:16px;text-align:left;padding:12px 14px;background:white;border:0;border-bottom:1px solid #edf0f3;color:inherit;font-size:13px;text-decoration:none}.monitor-event-row small{color:#78838f;white-space:nowrap;font-size:11px}.monitor-event-row:hover{background:#fff9f5}.monitor-dot{display:inline-block;width:6px;height:6px;background:#f0520f;border-radius:50%;margin-right:8px}.monitor-status-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}.monitor-status-grid .card p{padding:0 14px}.monitor-evidence{display:grid;grid-template-columns:110px 1fr;gap:8px;font-size:13px}.monitor-evidence dt{color:#78838f}.monitor-evidence dd{margin:0;overflow-wrap:anywhere;min-width:0}.monitor-evidence pre{white-space:pre-wrap;max-height:280px;overflow:auto;font-size:11px}@media(max-width:700px){.monitor-form,.monitor-status-grid{grid-template-columns:1fr}.monitor-condition{grid-template-columns:1fr 1fr}.monitor-event-row{align-items:flex-start;flex-direction:column;gap:5px}.monitor-table{min-width:700px}}
 
 </style></head><body><div id="root"></div><script>!/**
  * Highcharts Stock v13.1.1 (2026-09-20)
@@ -1237,6 +1307,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = App;
+const Monitoring_1 = __importDefault(require("./pages/Monitoring"));
+const Monitoring_2 = require("./state/Monitoring");
 const react_1 = __importDefault(require("react"));
 const AppContext_1 = require("./state/AppContext");
 const Shell_1 = require("./components/Shell");
@@ -1250,7 +1322,7 @@ const Lineage_1 = __importDefault(require("./pages/Lineage"));
 const System_1 = __importDefault(require("./pages/System"));
 const Api_1 = __importDefault(require("./pages/Api"));
 const Settings_1 = __importDefault(require("./pages/Settings"));
-const pages = { overview: Overview_1.default, data: MarketData_1.default, features: Features_1.default, regimes: Regimes_1.default, alerts: Alerts_1.default, quality: Quality_1.default, lineage: Lineage_1.default, system: System_1.default, api: Api_1.default, settings: Settings_1.default };
+const pages = { monitoring: Monitoring_1.default, overview: Overview_1.default, data: MarketData_1.default, features: Features_1.default, regimes: Regimes_1.default, alerts: Alerts_1.default, quality: Quality_1.default, lineage: Lineage_1.default, system: System_1.default, api: Api_1.default, settings: Settings_1.default };
 function Workspace() {
     const { route, activeAlert } = (0, AppContext_1.useApp)();
     const Page = pages[route];
@@ -1259,7 +1331,527 @@ function Workspace() {
         activeAlert && react_1.default.createElement(Alerts_1.AlertDetail, { key: activeAlert }));
 }
 function App() { return react_1.default.createElement(AppContext_1.AppProvider, null,
-    react_1.default.createElement(Workspace, null)); }
+    react_1.default.createElement(Monitoring_2.MonitorProvider, null,
+        react_1.default.createElement(Workspace, null))); }
+
+},
+"src/pages/Monitoring.tsx":function(module,exports,require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = Monitoring;
+const react_1 = __importStar(require("react"));
+const ui_1 = require("../components/ui");
+const Monitoring_1 = require("../state/Monitoring");
+const realtimeMarket_1 = require("../services/realtimeMarket");
+const emptyRule = () => ({ name: '', type: 'PRICE', instrument_id: '', combination: 'ALL', conditions: [{ field: 'last_price', operator: 'LT', threshold: '' }], cooldown_minutes: 30, browser_notify: false, once: false, schedule: { kind: 'DAILY', timezone: 'Asia/Shanghai', time: '09:00', weekday: 1, hours: 24 } });
+const date = (v) => v ? new Date(v).toLocaleString() : '—';
+const fields = { last_price: '成交价', bid_price: '买价', ask_price: '卖价', index_value: '指数值', indicative_rate: '即期参考汇价', change_percent: '涨跌幅（%）' };
+function RuleEditor({ rule, onClose, onSaved }) {
+    const [d, setD] = (0, react_1.useState)(rule?.definition || emptyRule()), [enabled, setEnabled] = (0, react_1.useState)(rule?.enabled ?? true), [busy, setBusy] = (0, react_1.useState)(false), [error, setError] = (0, react_1.useState)(''), [query, setQuery] = (0, react_1.useState)(''), [matches, setMatches] = (0, react_1.useState)([]), [targets, setTargets] = (0, react_1.useState)([]), [times, setTimes] = (0, react_1.useState)([]), [searchState, setSearchState] = (0, react_1.useState)('');
+    const patch = (p) => setD(x => ({ ...x, ...p }));
+    (0, react_1.useEffect)(() => { if (d.type !== 'DATA')
+        return; let live = true; (0, Monitoring_1.monitorApi)('targets').then(x => { if (live)
+        setTargets(x.datasets); }).catch(e => { if (live)
+        setError(e.message); }); return () => { live = false; }; }, [d.type]);
+    (0, react_1.useEffect)(() => { const abort = new AbortController(); if (!query.trim()) {
+        setMatches([]);
+        return;
+    } const timer = setTimeout(async () => { setSearchState('搜索中…'); try {
+        const r = await fetch('/market-api/v1/market/realtime/search?q=' + encodeURIComponent(query), { signal: abort.signal, cache: 'no-store' });
+        if (!r.ok)
+            throw new Error('证券搜索失败');
+        const data = await r.json();
+        setMatches(data.items || []);
+        setSearchState(data.status === 'OK' ? (data.items?.length ? '' : '未找到匹配资产') : '等待来源查询，请稍后重试');
+    }
+    catch (e) {
+        if (!abort.signal.aborted)
+            setSearchState(e instanceof Error ? e.message : '搜索失败');
+    } }, 600); return () => { clearTimeout(timer); abort.abort(); }; }, [query]);
+    (0, react_1.useEffect)(() => { if (d.type !== 'AI')
+        return; const abort = new AbortController(); (0, Monitoring_1.monitorApi)('schedule/preview', 'POST', d.schedule, abort.signal).then(v => { setTimes(v.times); setError(''); }).catch(e => { if (!abort.signal.aborted) {
+        setTimes([]);
+        setError(e.message);
+    } }); return () => abort.abort(); }, [d.type, d.schedule]);
+    const save = async () => { setBusy(true); setError(''); try {
+        await (0, Monitoring_1.monitorApi)(rule ? 'rules/' + rule.id : 'rules', rule ? 'PUT' : 'POST', { version: rule?.version || 0, enabled, definition: d });
+        onSaved();
+        onClose();
+    }
+    catch (e) {
+        setError(e instanceof Error ? e.message : '保存失败');
+    }
+    finally {
+        setBusy(false);
+    } };
+    const changeType = (type) => setD({ ...emptyRule(), name: d.name, type, domain: 'market', dataset: 'main', entity_id: '', metric: '', changes: 'BOTH', category: 'REPORT', question: '', trigger: '', domains: [] });
+    return react_1.default.createElement(ui_1.Modal, { title: rule ? '编辑监控' : '新增监控', onClose: () => { if (!busy)
+            onClose(); }, wide: true, footer: react_1.default.createElement(react_1.default.Fragment, null,
+            react_1.default.createElement(ui_1.Button, { onClick: onClose, disabled: busy }, "\u53D6\u6D88"),
+            react_1.default.createElement(ui_1.Button, { variant: "primary", busy: busy, onClick: save }, "\u4FDD\u5B58\u76D1\u63A7")) },
+        react_1.default.createElement("div", { className: "monitor-form" },
+            react_1.default.createElement(ui_1.Field, { label: "\u540D\u79F0" },
+                react_1.default.createElement("input", { value: d.name, maxLength: 120, onChange: e => patch({ name: e.target.value }), placeholder: "\u4F8B\u5982\uFF1A\u62DB\u5546\u94F6\u884C\u4F4E\u4E8E 40 \u5143" })),
+            react_1.default.createElement(ui_1.Field, { label: "\u76D1\u63A7\u7C7B\u578B" },
+                react_1.default.createElement("select", { value: d.type, onChange: e => changeType(e.target.value) }, ['PRICE', 'DATA', 'ANNOUNCEMENT', 'AI'].map(t => react_1.default.createElement("option", { key: t, value: t }, (0, Monitoring_1.monitorText)(t))))),
+            (d.type === 'PRICE' || d.type === 'ANNOUNCEMENT') && react_1.default.createElement("div", { className: "monitor-span" },
+                react_1.default.createElement(ui_1.Field, { label: "\u8D44\u4EA7\u4EE3\u7801\u6216\u540D\u79F0" },
+                    react_1.default.createElement("input", { value: query, onChange: e => setQuery(e.target.value), placeholder: "\u8F93\u5165\u4EE3\u7801\u6216\u540D\u79F0\u641C\u7D22" })),
+                searchState && react_1.default.createElement("small", { role: "status" }, searchState),
+                react_1.default.createElement("div", { className: "monitor-search" }, matches.filter(m => d.type !== 'ANNOUNCEMENT' || /^EQUITY:(XSHG|XSHE|XHKG):/.test(m.instrument_id)).map(m => react_1.default.createElement("button", { type: "button", key: m.instrument_id, onClick: () => { patch({ instrument_id: m.instrument_id }); setQuery(''); } },
+                    m.name,
+                    " ",
+                    react_1.default.createElement("small", null, m.instrument_id)))),
+                d.instrument_id && react_1.default.createElement("p", null,
+                    "\u5DF2\u9009\u62E9\uFF1A",
+                    (0, realtimeMarket_1.instrumentName)(d.instrument_id),
+                    " ",
+                    react_1.default.createElement("small", null, d.instrument_id))),
+            d.type === 'PRICE' && react_1.default.createElement("div", { className: "monitor-span" },
+                react_1.default.createElement(ui_1.Field, { label: "\u6761\u4EF6\u7EC4\u5408" },
+                    react_1.default.createElement("select", { value: d.combination, onChange: e => patch({ combination: e.target.value }) },
+                        react_1.default.createElement("option", { value: "ALL" }, "\u5168\u90E8\u6EE1\u8DB3"),
+                        react_1.default.createElement("option", { value: "ANY" }, "\u4EFB\u4E00\u6EE1\u8DB3"))),
+                d.conditions?.map((c, i) => react_1.default.createElement("div", { className: "monitor-condition", key: i },
+                    react_1.default.createElement("select", { "aria-label": '价格字段 ' + (i + 1), value: c.field, onChange: e => patch({ conditions: d.conditions.map((v, n) => n === i ? { ...v, field: e.target.value } : v) }) }, Object.entries(fields).map(([v, n]) => react_1.default.createElement("option", { key: v, value: v }, n))),
+                    react_1.default.createElement("select", { "aria-label": '判断方式 ' + (i + 1), value: c.operator, onChange: e => patch({ conditions: d.conditions.map((v, n) => n === i ? { ...v, operator: e.target.value } : v) }) }, Object.entries({ GT: '高于', LT: '低于', CROSS_UP: '向上突破', CROSS_DOWN: '向下突破' }).map(([v, n]) => react_1.default.createElement("option", { key: v, value: v }, n))),
+                    react_1.default.createElement("input", { "aria-label": '阈值 ' + (i + 1), inputMode: "decimal", value: c.threshold, onChange: e => patch({ conditions: d.conditions.map((v, n) => n === i ? { ...v, threshold: e.target.value } : v) }) }),
+                    react_1.default.createElement(ui_1.Button, { disabled: d.conditions.length === 1, onClick: () => patch({ conditions: d.conditions.filter((_, n) => n !== i) }) }, "\u79FB\u9664"))),
+                react_1.default.createElement(ui_1.Button, { disabled: (d.conditions?.length || 0) >= 8, onClick: () => patch({ conditions: [...(d.conditions || []), { field: 'last_price', operator: 'GT', threshold: '' }] }) }, "\uFF0B \u6761\u4EF6"),
+                react_1.default.createElement("p", { className: "monitor-muted" }, "\u5171\u4EAB\u6700\u65B0\u884C\u60C5\uFF1B\u6765\u6E90\u4E0D\u63D0\u4F9B\u7684\u4EF7\u683C\u5B57\u6BB5\u4E0D\u4F1A\u53C2\u4E0E\u5224\u65AD\u3002"),
+                react_1.default.createElement(ui_1.Field, { label: "\u91CD\u590D\u89E6\u53D1\u51B7\u5374\uFF08\u5206\u949F\uFF09" },
+                    react_1.default.createElement("input", { type: "number", min: "0", max: "10080", value: d.cooldown_minutes, onChange: e => patch({ cooldown_minutes: Number(e.target.value) }) }))),
+            d.type === 'DATA' && react_1.default.createElement(react_1.default.Fragment, null,
+                react_1.default.createElement(ui_1.Field, { label: "\u6570\u636E\u7CFB\u5217" },
+                    react_1.default.createElement("select", { value: [d.domain, d.dataset, d.entity_id, d.metric].join('|'), onChange: e => { const [domain, dataset, entity_id, metric] = e.target.value.split('|'); patch({ domain, dataset, entity_id, metric }); } },
+                        react_1.default.createElement("option", { value: "" }, "\u9009\u62E9\u73B0\u6709\u6570\u636E"),
+                        targets.map(t => react_1.default.createElement("option", { key: [t.domain, t.dataset, t.entity_id, t.metric].join('|'), value: [t.domain, t.dataset, t.entity_id, t.metric].join('|') },
+                            t.entity_id,
+                            " \u00B7 ",
+                            t.metric,
+                            " \u00B7 ",
+                            t.dataset,
+                            " / ",
+                            t.domain)))),
+                react_1.default.createElement(ui_1.Field, { label: "\u5173\u6CE8\u53D8\u5316" },
+                    react_1.default.createElement("select", { value: d.changes, onChange: e => patch({ changes: e.target.value }) },
+                        react_1.default.createElement("option", { value: "BOTH" }, "\u65B0\u8BB0\u5F55\u4E0E\u4FEE\u8BA2"),
+                        react_1.default.createElement("option", { value: "NEW" }, "\u4EC5\u65B0\u8BB0\u5F55"),
+                        react_1.default.createElement("option", { value: "REVISION" }, "\u4EC5\u65E7\u8BB0\u5F55\u4FEE\u8BA2")))),
+            d.type === 'ANNOUNCEMENT' && react_1.default.createElement(ui_1.Field, { label: "\u516C\u544A\u7C7B\u522B" },
+                react_1.default.createElement("select", { value: d.category, onChange: e => patch({ category: e.target.value }) },
+                    react_1.default.createElement("option", { value: "REPORT" }, "\u8D22\u62A5 / \u4E1A\u7EE9\u62A5\u544A"),
+                    react_1.default.createElement("option", { value: "FORECAST" }, "\u4E1A\u7EE9\u9884\u544A / \u76C8\u559C\u76C8\u8B66"),
+                    react_1.default.createElement("option", { value: "DIVIDEND" }, "\u5206\u7EA2 / \u6D3E\u606F"))),
+            d.type === 'AI' && react_1.default.createElement(react_1.default.Fragment, null,
+                react_1.default.createElement("div", { className: "monitor-span" },
+                    react_1.default.createElement(ui_1.Field, { label: "\u5173\u6CE8\u95EE\u9898" },
+                        react_1.default.createElement("textarea", { rows: 3, maxLength: 4000, value: d.question, onChange: e => patch({ question: e.target.value }), placeholder: "\u4F8B\u5982\uFF1A\u5173\u6CE8\u817E\u8BAF\u6700\u65B0\u53D1\u5E03\u7684\u5B63\u5EA6\u8D22\u62A5" })),
+                    react_1.default.createElement(ui_1.Field, { label: "\u4EC0\u4E48\u60C5\u51B5\u4E0B\u63D0\u9192" },
+                        react_1.default.createElement("textarea", { rows: 2, maxLength: 4000, value: d.trigger, onChange: e => patch({ trigger: e.target.value }), placeholder: "\u4F8B\u5982\uFF1A\u6B63\u5F0F\u53D1\u5E03\u65B0\u7684\u8D22\u62A5\uFF0C\u4E14\u62AB\u9732\u8425\u6536\u540C\u6BD4\u589E\u957F\u8D85\u8FC7 10%" }))),
+                react_1.default.createElement(ui_1.Field, { label: "\u9650\u5B9A\u6765\u6E90\u57DF\u540D\uFF08\u53EF\u9009\uFF0C\u9017\u53F7\u5206\u9694\uFF09" },
+                    react_1.default.createElement("input", { value: d.domains?.join(',') || '', onChange: e => patch({ domains: e.target.value.split(',').map(s => s.trim()).filter(Boolean) }), placeholder: "\u4F8B\u5982\uFF1Ahkexnews.hk" })),
+                react_1.default.createElement(ui_1.Field, { label: "\u6267\u884C\u8BA1\u5212" },
+                    react_1.default.createElement("select", { value: d.schedule?.kind, onChange: e => patch({ schedule: { ...d.schedule, kind: e.target.value } }) },
+                        react_1.default.createElement("option", { value: "DAILY" }, "\u6BCF\u5929"),
+                        react_1.default.createElement("option", { value: "WEEKLY" }, "\u6BCF\u5468"),
+                        react_1.default.createElement("option", { value: "INTERVAL" }, "\u56FA\u5B9A\u95F4\u9694"),
+                        react_1.default.createElement("option", { value: "ONCE" }, "\u4EC5\u4E00\u6B21"))),
+                react_1.default.createElement(ui_1.Field, { label: "\u65F6\u533A" },
+                    react_1.default.createElement("select", { value: d.schedule?.timezone, onChange: e => patch({ schedule: { ...d.schedule, timezone: e.target.value } }) }, ['Asia/Shanghai', 'Asia/Hong_Kong', 'America/New_York', 'UTC'].map(z => react_1.default.createElement("option", { key: z }, z)))),
+                ['DAILY', 'WEEKLY'].includes(d.schedule?.kind || '') && react_1.default.createElement(ui_1.Field, { label: "\u65F6\u95F4" },
+                    react_1.default.createElement("input", { type: "time", value: d.schedule?.time, onChange: e => patch({ schedule: { ...d.schedule, time: e.target.value } }) })),
+                d.schedule?.kind === 'WEEKLY' && react_1.default.createElement(ui_1.Field, { label: "\u661F\u671F" },
+                    react_1.default.createElement("select", { value: d.schedule.weekday, onChange: e => patch({ schedule: { ...d.schedule, weekday: Number(e.target.value) } }) }, ['一', '二', '三', '四', '五', '六', '日'].map((n, i) => react_1.default.createElement("option", { key: n, value: i + 1 },
+                        "\u661F\u671F",
+                        n)))),
+                d.schedule?.kind === 'INTERVAL' && react_1.default.createElement(ui_1.Field, { label: "\u95F4\u9694\u5C0F\u65F6" },
+                    react_1.default.createElement("input", { type: "number", min: "1", max: "8760", value: d.schedule.hours, onChange: e => patch({ schedule: { ...d.schedule, hours: Number(e.target.value) } }) })),
+                d.schedule?.kind === 'ONCE' && react_1.default.createElement(ui_1.Field, { label: "\u6267\u884C\u65F6\u95F4\uFF08\u672C\u673A\u65F6\u533A\uFF09" },
+                    react_1.default.createElement("input", { type: "datetime-local", onChange: e => { if (e.target.value)
+                            patch({ schedule: { ...d.schedule, at: new Date(e.target.value).toISOString() } }); } })),
+                react_1.default.createElement("p", { className: "monitor-span monitor-muted" },
+                    "\u4E0B\u6B21\u6267\u884C\uFF1A",
+                    times.length ? times.map(date).join('；') : '请填写有效时间',
+                    "\u3002\u65E0\u65B0\u8BC1\u636E\u4E0D\u63D0\u9192\uFF1B\u6240\u6709\u89C4\u5219\u5408\u8BA1\u9ED8\u8BA4\u6BCF\u5929 20 \u6B21\u3002")),
+            (d.type === 'DATA' || d.type === 'ANNOUNCEMENT') && react_1.default.createElement("p", { className: "monitor-span monitor-muted" }, "\u6BCF 15 \u5206\u949F\u68C0\u67E5\u3002\u9996\u6B21\u5EFA\u7ACB\u57FA\u51C6\uFF0C\u4E0D\u63D0\u9192\u5DF2\u6709\u5386\u53F2\u8BB0\u5F55\u3002"),
+            react_1.default.createElement("label", null,
+                react_1.default.createElement("input", { type: "checkbox", checked: enabled, onChange: e => setEnabled(e.target.checked) }),
+                " \u4FDD\u5B58\u540E\u542F\u7528"),
+            react_1.default.createElement("label", null,
+                react_1.default.createElement("input", { type: "checkbox", checked: !!d.once, onChange: e => patch({ once: e.target.checked }) }),
+                " \u89E6\u53D1\u4E00\u6B21\u540E\u6682\u505C"),
+            react_1.default.createElement("label", { className: "monitor-span" },
+                react_1.default.createElement("input", { type: "checkbox", checked: !!d.browser_notify, onChange: e => patch({ browser_notify: e.target.checked }) }),
+                " \u540C\u65F6\u53D1\u9001\u6D4F\u89C8\u5668\u901A\u77E5"),
+            error && react_1.default.createElement("p", { className: "monitor-span monitor-error", role: "alert" }, error)));
+}
+function Evidence({ body }) {
+    const labels = { title: '标题', summary: '摘要', url: '原文', published_at: '来源发布时间', business_date: '业务日期', discovered_at: '发现时间', source: '来源', source_id: '来源', value: '数值', unit: '单位', change_kind: '变化', reason: '判断理由', error: '错误', values: '条件实际值', conditions: '条件', quote: '行情快照', scheduled_at: '计划时间', started_at: '执行时间', late_seconds: '延迟秒数' };
+    const render = (key, value) => {
+        const link = key === 'url' ? (0, Monitoring_1.safeSource)(value) : null;
+        if (link)
+            return react_1.default.createElement("a", { href: link, target: "_blank", rel: "noreferrer" }, "\u67E5\u770B\u6765\u6E90 \u2197");
+        if (key === 'values' && value && typeof value === 'object')
+            return Object.entries(value).map(([f, v]) => react_1.default.createElement("div", { key: f },
+                fields[f] || f,
+                "\uFF1A",
+                String(v)));
+        if (key === 'conditions' && Array.isArray(value))
+            return value.map((c, i) => react_1.default.createElement("div", { key: i },
+                fields[c.field] || c.field,
+                " \u00B7 ",
+                { GT: '高于', LT: '低于', CROSS_UP: '向上突破', CROSS_DOWN: '向下突破' }[c.operator] || c.operator,
+                " ",
+                c.threshold));
+        if (key === 'quote' && value && typeof value === 'object') {
+            const q = value;
+            return react_1.default.createElement(react_1.default.Fragment, null,
+                react_1.default.createElement("strong", null, (0, realtimeMarket_1.instrumentName)(String(q.instrument_id))),
+                Object.entries(fields).filter(([f]) => q[f]).map(([f, n]) => { const p = q[f]; return react_1.default.createElement("div", { key: f },
+                    n,
+                    " ",
+                    p.value,
+                    " ",
+                    String(q.currency || ''),
+                    " ",
+                    react_1.default.createElement("small", null,
+                        "\u6765\u6E90\u65F6\u95F4\uFF1A",
+                        date(p.source_time))); }),
+                react_1.default.createElement("div", null,
+                    "\u6765\u6E90\uFF1A",
+                    String(q.provider),
+                    " \u00B7 ",
+                    String(q.feed)),
+                react_1.default.createElement("details", null,
+                    react_1.default.createElement("summary", null, "\u5B8C\u6574\u6765\u6E90\u8BB0\u5F55"),
+                    react_1.default.createElement("pre", null, JSON.stringify(q, null, 2))));
+        }
+        if (key.endsWith('_at') && typeof value === 'string')
+            return date(value);
+        if (value && typeof value === 'object')
+            return react_1.default.createElement("details", null,
+                react_1.default.createElement("summary", null, "\u67E5\u770B\u8BB0\u5F55"),
+                react_1.default.createElement("pre", null, JSON.stringify(value, null, 2)));
+        return key === 'error' ? (0, Monitoring_1.monitorText)(String(value)) : String(value ?? '—');
+    };
+    return react_1.default.createElement("dl", { className: "monitor-evidence" }, Object.entries(body).map(([key, value]) => react_1.default.createElement(react_1.default.Fragment, { key: key },
+        react_1.default.createElement("dt", null, labels[key] || key),
+        react_1.default.createElement("dd", null, render(key, value)))));
+}
+function Monitoring() {
+    const shared = (0, Monitoring_1.useMonitoring)();
+    const params = new URLSearchParams(location.hash.split('?')[1]);
+    const [tab, setTab] = (0, react_1.useState)(params.get('tab') || 'rules'), [rules, setRules] = (0, react_1.useState)([]), [status, setStatus] = (0, react_1.useState)(null), [runs, setRuns] = (0, react_1.useState)([]), [editor, setEditor] = (0, react_1.useState)(params.has('new') ? null : undefined), [selected, setSelected] = (0, react_1.useState)(null), [older, setOlder] = (0, react_1.useState)([]), [cursor, setCursor] = (0, react_1.useState)(''), [revision, reload] = (0, react_1.useState)(0), [error, setError] = (0, react_1.useState)(''), [busy, setBusy] = (0, react_1.useState)(''), [deleteRule, setDeleteRule] = (0, react_1.useState)(null), [permission, setPermission] = (0, react_1.useState)(typeof Notification === 'undefined' ? 'unsupported' : Notification.permission);
+    const refresh = () => { reload(n => n + 1); shared.refresh(); };
+    (0, react_1.useEffect)(() => { const changed = () => { const p = new URLSearchParams(location.hash.split('?')[1]); if (p.has('tab'))
+        setTab(p.get('tab')); if (p.has('new'))
+        setEditor(null); }; window.addEventListener('hashchange', changed); return () => window.removeEventListener('hashchange', changed); }, []);
+    (0, react_1.useEffect)(() => { let live = true; const load = () => Promise.all([(0, Monitoring_1.monitorApi)('rules'), (0, Monitoring_1.monitorApi)('status'), (0, Monitoring_1.monitorApi)('runs')]).then(([r, s, log]) => { if (live) {
+        setRules(r.items);
+        setStatus(s);
+        setRuns(log.items);
+    } }).catch(e => { if (live)
+        setError(e.message); }); void load(); const t = setInterval(load, 10000); return () => { live = false; clearInterval(t); }; }, [revision]);
+    (0, react_1.useEffect)(() => { if (!older.length)
+        setCursor(shared.page?.next_cursor || ''); const id = new URLSearchParams(location.hash.split('?')[1]).get('event'); const found = shared.page?.items.find(e => e.id === id); if (found)
+        setSelected(found); }, [shared.page]);
+    const action = async (key, fn) => { setBusy(key); setError(''); try {
+        await fn();
+        refresh();
+    }
+    catch (e) {
+        setError(e instanceof Error ? e.message : '操作失败');
+    }
+    finally {
+        setBusy('');
+    } };
+    const open = (e) => { setSelected(e); void action('read', () => (0, Monitoring_1.monitorApi)('events/' + e.id + '/read', 'POST')); };
+    const events = [...(shared.page?.items || []), ...older].filter((e, i, a) => a.findIndex(v => v.id === e.id) === i);
+    return react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement(ui_1.PageHead, { title: "\u76D1\u63A7\u4E2D\u5FC3", actions: react_1.default.createElement(react_1.default.Fragment, null,
+                react_1.default.createElement(ui_1.Button, { onClick: async () => { if ('Notification' in window)
+                        setPermission(await Notification.requestPermission()); }, disabled: permission === 'unsupported' || permission === 'granted' }, permission === 'granted' ? '浏览器通知已开启' : permission === 'denied' ? '浏览器通知被阻止' : '开启浏览器通知'),
+                react_1.default.createElement(ui_1.Button, { variant: "primary", icon: "plus", onClick: () => setEditor(null) }, "\u65B0\u589E\u76D1\u63A7")) }),
+        react_1.default.createElement(ui_1.Tabs, { value: tab, onChange: setTab, items: [{ id: 'rules', label: '监控规则', count: rules.length }, { id: 'events', label: '触发记录', count: shared.page?.unread }, { id: 'status', label: '运行状态' }] }),
+        (error || shared.error) && react_1.default.createElement("p", { className: "monitor-error", role: "alert" },
+            error || shared.error,
+            " ",
+            react_1.default.createElement(ui_1.Button, { onClick: () => { setError(''); refresh(); } }, "\u91CD\u8BD5")),
+        tab === 'rules' && react_1.default.createElement(ui_1.Card, null,
+            react_1.default.createElement("div", { className: "monitor-table-wrap" },
+                react_1.default.createElement("table", { className: "monitor-table" },
+                    react_1.default.createElement("thead", null,
+                        react_1.default.createElement("tr", null,
+                            react_1.default.createElement("th", null, "\u76D1\u63A7"),
+                            react_1.default.createElement("th", null, "\u7C7B\u578B"),
+                            react_1.default.createElement("th", null, "\u72B6\u6001"),
+                            react_1.default.createElement("th", null, "\u4E0B\u6B21\u68C0\u67E5"),
+                            react_1.default.createElement("th", null, "\u64CD\u4F5C"))),
+                    react_1.default.createElement("tbody", null, rules.map(r => react_1.default.createElement("tr", { key: r.id },
+                        react_1.default.createElement("td", null,
+                            react_1.default.createElement("strong", null, r.name),
+                            react_1.default.createElement("small", null, r.definition.instrument_id ? (0, realtimeMarket_1.instrumentName)(r.definition.instrument_id) : r.definition.entity_id || r.definition.question)),
+                        react_1.default.createElement("td", null, (0, Monitoring_1.monitorText)(r.kind)),
+                        react_1.default.createElement("td", null, r.enabled ? (0, Monitoring_1.monitorText)(r.status) : '已暂停'),
+                        react_1.default.createElement("td", null, date(r.next_at)),
+                        react_1.default.createElement("td", null,
+                            react_1.default.createElement(ui_1.Button, { disabled: !!busy, onClick: () => setEditor(r) }, "\u7F16\u8F91"),
+                            react_1.default.createElement(ui_1.Button, { disabled: !!busy, onClick: () => action(r.id, () => (0, Monitoring_1.monitorApi)('rules/' + r.id, 'PUT', { version: r.version, enabled: !r.enabled, definition: r.definition })) }, r.enabled ? '暂停' : '恢复'),
+                            react_1.default.createElement(ui_1.Button, { disabled: !!busy || !r.enabled, onClick: () => action(r.id, () => (0, Monitoring_1.monitorApi)('rules/' + r.id + '/check', 'POST', { version: r.version })) }, "\u7ACB\u5373\u68C0\u67E5"),
+                            react_1.default.createElement(ui_1.Button, { disabled: !!busy, onClick: () => setDeleteRule(r) }, "\u5220\u9664")))))),
+                !rules.length && react_1.default.createElement("p", { className: "monitor-empty" }, "\u8FD8\u6CA1\u6709\u76D1\u63A7\u89C4\u5219\u3002\u521B\u5EFA\u6761\u4EF6\uFF0C\u6EE1\u8DB3\u540E\u81EA\u52A8\u63D0\u9192\u3002"))),
+        tab === 'events' && react_1.default.createElement(ui_1.Card, { title: "\u89E6\u53D1\u8BB0\u5F55", action: react_1.default.createElement(ui_1.Button, { disabled: !shared.page?.unread || !!busy, onClick: () => action('read', () => (0, Monitoring_1.monitorApi)('events/read', 'POST', { through: Number(shared.page?.latest_id) })) }, "\u5168\u90E8\u5DF2\u8BFB") },
+            react_1.default.createElement("div", null,
+                events.map(e => react_1.default.createElement("button", { className: "monitor-event-row", key: e.id, onClick: () => open(e) },
+                    react_1.default.createElement("span", null,
+                        !e.read_at && react_1.default.createElement("i", { className: "monitor-dot" }),
+                        e.title),
+                    react_1.default.createElement("small", null,
+                        (0, Monitoring_1.monitorText)(e.kind),
+                        " \u00B7 ",
+                        date(e.created_at)))),
+                !events.length && react_1.default.createElement("p", { className: "monitor-empty" }, "\u6682\u65E0\u89E6\u53D1\u8BB0\u5F55"),
+                cursor && react_1.default.createElement(ui_1.Button, { onClick: () => action('more', async () => { const p = await (0, Monitoring_1.monitorApi)('events?before=' + cursor); setOlder(v => [...v, ...p.items]); setCursor(p.next_cursor); }) }, "\u66F4\u65E9\u8BB0\u5F55"))),
+        tab === 'status' && react_1.default.createElement(react_1.default.Fragment, null,
+            react_1.default.createElement("div", { className: "monitor-status-grid" },
+                react_1.default.createElement(ui_1.Card, { title: "\u4EFB\u52A1\u8FD0\u884C" },
+                    react_1.default.createElement("p", null,
+                        "\u8FD0\u884C\u4E2D ",
+                        status?.running ?? '—',
+                        " \u00B7 \u542F\u7528 ",
+                        rules.filter(r => r.enabled).length,
+                        " / ",
+                        status?.rule_limit ?? '—'),
+                    react_1.default.createElement("p", { className: "monitor-muted" }, "\u540E\u7AEF\u5728\u7EBF\u65F6\u6301\u7EED\u6267\u884C\uFF1B\u7F51\u9875\u5173\u95ED\u540E\u4E8B\u4EF6\u4ECD\u4FDD\u7559\u3002")),
+                react_1.default.createElement(ui_1.Card, { title: "AI \u6267\u884C\u989D\u5EA6" },
+                    react_1.default.createElement("p", null,
+                        "\u4ECA\u65E5\u5269\u4F59 ",
+                        status?.ai_remaining ?? '—',
+                        " / ",
+                        status?.ai_daily_limit ?? '—',
+                        " \u6B21"),
+                    react_1.default.createElement("p", { className: "monitor-muted" }, "\u6309\u4E0A\u6D77\u65F6\u533A\u91CD\u7F6E\uFF1B\u624B\u52A8\u68C0\u67E5\u3001\u9A8C\u8BC1\u548C\u91CD\u8BD5\u5747\u8BA1\u5165\u3002"))),
+            react_1.default.createElement(ui_1.Card, { title: "\u6765\u6E90\u72B6\u6001" },
+                react_1.default.createElement("div", { className: "monitor-table-wrap" },
+                    react_1.default.createElement("table", { className: "monitor-table" },
+                        react_1.default.createElement("thead", null,
+                            react_1.default.createElement("tr", null,
+                                react_1.default.createElement("th", null, "\u6765\u6E90"),
+                                react_1.default.createElement("th", null, "\u72B6\u6001"),
+                                react_1.default.createElement("th", null, "\u6700\u8FD1\u68C0\u67E5"),
+                                react_1.default.createElement("th", null))),
+                        react_1.default.createElement("tbody", null, status?.sources.map(s => react_1.default.createElement("tr", { key: s.source },
+                            react_1.default.createElement("td", null, { openai: 'OpenAI 联网搜索', cninfo: '巨潮资讯 · A 股', hkex: '披露易 · 港股' }[s.source] || s.source),
+                            react_1.default.createElement("td", null, (0, Monitoring_1.monitorText)(s.status)),
+                            react_1.default.createElement("td", null, date(s.checked_at)),
+                            react_1.default.createElement("td", null,
+                                react_1.default.createElement(ui_1.Button, { disabled: !!busy || !s.configured, busy: busy === s.source, onClick: () => action(s.source, () => (0, Monitoring_1.monitorApi)('sources/' + s.source + '/check', 'POST')) }, "\u9A8C\u8BC1\u8FDE\u63A5")))))))),
+            react_1.default.createElement(ui_1.Card, { title: "\u6700\u8FD1\u6267\u884C" },
+                react_1.default.createElement("div", { className: "monitor-table-wrap" },
+                    react_1.default.createElement("table", { className: "monitor-table" },
+                        react_1.default.createElement("thead", null,
+                            react_1.default.createElement("tr", null,
+                                react_1.default.createElement("th", null, "\u89C4\u5219"),
+                                react_1.default.createElement("th", null, "\u6267\u884C\u65F6\u95F4"),
+                                react_1.default.createElement("th", null, "\u7ED3\u679C"))),
+                        react_1.default.createElement("tbody", null, runs.map(r => react_1.default.createElement("tr", { key: String(r.id) },
+                            react_1.default.createElement("td", null, rules.find(v => v.id === r.rule_id)?.name || '已删除规则'),
+                            react_1.default.createElement("td", null, date(String(r.started_at))),
+                            react_1.default.createElement("td", null,
+                                react_1.default.createElement("details", null,
+                                    react_1.default.createElement("summary", null, (0, Monitoring_1.monitorText)(String(r.status))),
+                                    react_1.default.createElement(Evidence, { body: r.detail })))))))))),
+        editor !== undefined && react_1.default.createElement(RuleEditor, { rule: editor, onClose: () => setEditor(undefined), onSaved: refresh }),
+        selected && react_1.default.createElement(ui_1.Modal, { title: selected.title, onClose: () => setSelected(null) },
+            react_1.default.createElement("p", null,
+                (0, Monitoring_1.monitorText)(selected.kind),
+                " \u00B7 ",
+                date(selected.created_at)),
+            react_1.default.createElement(Evidence, { body: selected.body })),
+        deleteRule && react_1.default.createElement(ui_1.Modal, { title: "\u5220\u9664\u76D1\u63A7", onClose: () => setDeleteRule(null), footer: react_1.default.createElement(react_1.default.Fragment, null,
+                react_1.default.createElement(ui_1.Button, { onClick: () => setDeleteRule(null) }, "\u53D6\u6D88"),
+                react_1.default.createElement(ui_1.Button, { variant: "danger", busy: !!busy, onClick: () => action('delete', async () => { await (0, Monitoring_1.monitorApi)('rules/' + deleteRule.id + '?version=' + deleteRule.version, 'DELETE'); setDeleteRule(null); }) }, "\u5220\u9664")) },
+            react_1.default.createElement("p", null,
+                "\u5220\u9664\u201C",
+                deleteRule.name,
+                "\u201D\uFF1F\u5DF2\u6709\u89E6\u53D1\u8BB0\u5F55\u5C06\u4FDD\u7559\u3002")));
+}
+
+},
+"src/state/Monitoring.tsx":function(module,exports,require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.useMonitoring = exports.monitorText = exports.monitorLabels = void 0;
+exports.monitorApi = monitorApi;
+exports.validEventPage = validEventPage;
+exports.safeSource = safeSource;
+exports.MonitorProvider = MonitorProvider;
+exports.MonitorWidgetActions = MonitorWidgetActions;
+exports.MonitorWidget = MonitorWidget;
+const react_1 = __importStar(require("react"));
+const Icon_1 = require("../components/Icon");
+exports.monitorLabels = { PRICE: '资产价格', DATA: '数据发布', ANNOUNCEMENT: '公司公告', AI: 'AI 搜索', SYSTEM: '运行提醒', READY: '等待检查', PAUSED: '已暂停', MATCH: '条件满足', CONDITION_MET: '条件仍满足（已提醒）', NO_MATCH: '未满足', NO_NEW_FACTS: '暂无新事实', BASELINE_ESTABLISHED: '基准已建立', INSUFFICIENT_EVIDENCE: '证据不足', RUNNING: '执行中', PENDING: '等待行情', QUOTE_UNVERIFIED: '行情未通过有效性检查', FIELD_UNAVAILABLE: '来源不提供此字段', PREVIOUS_CLOSE_UNAVAILABLE: '缺少可靠昨收', AI_BUDGET_EXHAUSTED: 'AI 今日额度已用完', NOT_CONFIGURED: '尚未配置', UNVERIFIED: '尚未验证', VERIFIED: '验证通过', FAILED: '检查失败', SOURCE_UNAVAILABLE: '来源暂不可用', SOURCE_TIMEOUT: '来源超时', SOURCE_QUEUED: '等待来源预算', AI_QUEUED: '等待 AI 执行', VERSION_CONFLICT: '规则已更新，请刷新后再试', RULE_RUNNING: '规则正在运行，请稍后再试', AI_NOT_VERIFIED: '请先在运行状态中验证 AI 服务', SOURCE_NOT_VERIFIED: '请先验证公告来源', DATA_TARGET_NOT_FOUND: '未找到此数据集', CAPACITY_EXCEEDED: '启用规则数量已达上限', MONITORING_UNAVAILABLE: '监控服务暂不可用', UNSUPPORTED_INSTRUMENT: '请先搜索并选择资产', SCHEDULE_IN_PAST: '执行时间必须在未来', CANCELLED: '已取消', INTERRUPTED: '执行中断', UNSUPPORTED_DATASET: '仅支持已接入的正式数据集' };
+const monitorText = (s) => exports.monitorLabels[s] || s;
+exports.monitorText = monitorText;
+async function monitorApi(path, method = 'GET', body, signal) {
+    const response = await fetch('/market-api/v1/monitoring/' + path, { method, signal, cache: 'no-store', redirect: 'error', headers: body === undefined ? undefined : { 'Content-Type': 'application/json' }, body: body === undefined ? undefined : JSON.stringify(body) });
+    const value = await response.json().catch(() => ({ code: 'MONITORING_UNAVAILABLE' }));
+    if (!response.ok)
+        throw new Error((0, exports.monitorText)(value.code || 'MONITORING_UNAVAILABLE'));
+    return value;
+}
+function validEventPage(v) { const p = v; if (!p || !Array.isArray(p.items) || typeof p.unread !== 'number' || !/^\d+$/.test(p.latest_id) || p.items.some(e => !/^\d+$/.test(e.id) || typeof e.title !== 'string' || (!e.body || typeof e.body !== 'object' || Array.isArray(e.body)) || !Number.isFinite(Date.parse(e.created_at))))
+    throw new Error('监控事件格式异常'); return p; }
+function safeSource(url) { if (typeof url !== 'string')
+    return null; try {
+    const u = new URL(url);
+    return ['https:', 'http:'].includes(u.protocol) ? u.href : null;
+}
+catch {
+    return null;
+} }
+const Context = (0, react_1.createContext)({ page: null, error: '', refresh: () => { } });
+function MonitorProvider({ children }) {
+    const [page, setPage] = (0, react_1.useState)(null), [error, setError] = (0, react_1.useState)(''), [revision, reload] = (0, react_1.useState)(0);
+    const cursor = (0, react_1.useRef)(null);
+    (0, react_1.useEffect)(() => {
+        let closed = false, timer;
+        const abort = new AbortController();
+        const notify = async (e) => { if (!e.browser_notify || !('Notification' in window) || Notification.permission !== 'granted' || !navigator.locks)
+            return; await navigator.locks.request('fintech-monitor-notification', () => { try {
+            const last = localStorage.getItem('fintech-monitor-last-notification') || '0';
+            if (BigInt(e.id) <= BigInt(last))
+                return;
+            localStorage.setItem('fintech-monitor-last-notification', e.id);
+            const n = new Notification(e.title, { body: (0, exports.monitorText)(e.kind), tag: 'monitor-' + e.id });
+            n.onclick = () => { window.focus(); location.hash = '/monitoring?tab=events&event=' + e.id; n.close(); };
+        }
+        catch { /* Permission or storage failure must not interrupt station notifications. */ } }); };
+        let pending = false;
+        const poll = async () => { if (pending || closed)
+            return; pending = true; clearTimeout(timer); try {
+            const p = validEventPage(await monitorApi('events', 'GET', undefined, abort.signal));
+            if (cursor.current !== null) {
+                const fresh = await monitorApi('events/new?after=' + cursor.current, 'GET', undefined, abort.signal);
+                for (const e of fresh.items) {
+                    if (!closed)
+                        await notify(e);
+                    cursor.current = e.id;
+                }
+            }
+            else
+                cursor.current = p.latest_id;
+            if (!closed) {
+                setPage(p);
+                setError('');
+            }
+        }
+        catch (e) {
+            if (!closed)
+                setError(e instanceof Error ? e.message : '监控服务暂不可用');
+        }
+        finally {
+            pending = false;
+            if (!closed)
+                timer = setTimeout(poll, document.hidden ? 60000 : 10000);
+        } };
+        const visible = () => { if (!document.hidden)
+            void poll(); };
+        void poll();
+        document.addEventListener('visibilitychange', visible);
+        return () => { closed = true; clearTimeout(timer); abort.abort(); document.removeEventListener('visibilitychange', visible); };
+    }, [revision]);
+    return react_1.default.createElement(Context.Provider, { value: { page, error, refresh: () => reload(n => n + 1) } }, children);
+}
+const useMonitoring = () => (0, react_1.useContext)(Context);
+exports.useMonitoring = useMonitoring;
+function MonitorWidgetActions() { const { page } = (0, exports.useMonitoring)(); return react_1.default.createElement("div", { className: "monitor-widget-actions" },
+    react_1.default.createElement("span", { "aria-live": "polite" }, page ? `${page.unread} 条未读` : ''),
+    react_1.default.createElement("a", { className: "dashboard-inline-link", href: "#/monitoring?tab=events" },
+        "\u5168\u90E8",
+        react_1.default.createElement(Icon_1.Icon, { name: "arrow", size: 14 })),
+    react_1.default.createElement("a", { className: "monitor-add", href: "#/monitoring?new=1", "aria-label": "\u65B0\u589E\u76D1\u63A7", title: "\u65B0\u589E\u76D1\u63A7" },
+        react_1.default.createElement(Icon_1.Icon, { name: "plus", size: 16 }))); }
+function MonitorWidget() { const { page, error, refresh } = (0, exports.useMonitoring)(); return react_1.default.createElement("div", { className: "monitor-widget" }, error ? react_1.default.createElement("p", { role: "status" },
+    error,
+    " ",
+    react_1.default.createElement("button", { onClick: refresh }, "\u91CD\u8BD5")) : page?.items.length ? react_1.default.createElement("div", null, page.items.slice(0, 5).map(e => react_1.default.createElement("a", { className: "monitor-event-row", key: e.id, href: '#/monitoring?tab=events&event=' + e.id },
+    react_1.default.createElement("span", null,
+        !e.read_at && react_1.default.createElement("i", { className: "monitor-dot" }),
+        e.title),
+    react_1.default.createElement("small", null,
+        (0, exports.monitorText)(e.kind),
+        " \u00B7 ",
+        new Date(e.created_at).toLocaleString())))) : react_1.default.createElement("p", { className: "monitor-muted" },
+    "\u5C1A\u65E0\u89E6\u53D1\u8BB0\u5F55\u3002",
+    react_1.default.createElement("a", { href: "#/monitoring?new=1" }, "\u521B\u5EFA\u76D1\u63A7"))); }
 
 },
 "src/state/AppContext.tsx":function(module,exports,require){
@@ -1353,7 +1945,7 @@ function AppProvider({ children }) {
         }
         setState(previous => {
             const next = fn(previous);
-            return { ...(0, defaultState_1.initialState)(), prefs: { ...(0, defaultState_1.initialState)().prefs, positiveGreen: next.prefs.positiveGreen, compact: next.prefs.compact }, widgets: next.widgets, watchlist: next.watchlist };
+            return { ...(0, defaultState_1.initialState)(), prefs: { ...(0, defaultState_1.initialState)().prefs, positiveGreen: next.prefs.positiveGreen, compact: next.prefs.compact }, widgets: next.widgets, watchlist: next.watchlist, benchmarks: next.benchmarks };
         });
         return true;
     }, [notify]);
@@ -1597,6 +2189,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Overview;
+const Monitoring_1 = require("../state/Monitoring");
 const react_1 = __importStar(require("react"));
 const ui_1 = require("../components/ui");
 const charts_1 = require("../components/charts");
@@ -1610,13 +2203,40 @@ const model_1 = require("../features/documents/model");
 const quotes_1 = require("../features/market/quotes");
 const navigation_1 = require("../config/navigation");
 const AppContext_1 = require("../state/AppContext");
+const useRealtimeMarket_1 = require("../state/useRealtimeMarket");
+const RealtimeWidgets_1 = require("../components/RealtimeWidgets");
 const DashboardWidget_1 = require("../features/dashboard/DashboardWidget");
 const widgets_1 = require("../features/dashboard/widgets");
-const benchmarks = ['沪深300', '标普500', 'COMEX黄金期货', '美元指数DXY'];
+const widgets_2 = require("../features/dashboard/widgets");
+const assets_1 = require("../features/market/assets");
 const validPrice = (row) => row && typeof row.business_date === 'string' && (0, quotes_1.hasQuoteValue)(row);
 function Overview() {
     const { state, update, notify } = (0, AppContext_1.useApp)();
+    const benchmarks = state.benchmarks;
+    const [benchmarkEditor, setBenchmarkEditor] = (0, react_1.useState)(false);
+    const [catalog, setCatalog] = (0, react_1.useState)([]);
+    const [catalogError, setCatalogError] = (0, react_1.useState)(false);
+    const [catalogLoading, setCatalogLoading] = (0, react_1.useState)(false);
+    const [catalogRetry, setCatalogRetry] = (0, react_1.useState)(0);
+    const [query, setQuery] = (0, react_1.useState)('');
+    const quoteNames = (0, react_1.useMemo)(() => [...new Set([...benchmarks, ...(state.widgets.includes('performance') ? widgets_2.DEFAULT_BENCHMARKS : [])])], [benchmarks, state.widgets]);
+    (0, react_1.useEffect)(() => {
+        if (!benchmarkEditor)
+            return;
+        const controller = new AbortController();
+        setCatalogLoading(true);
+        setCatalogError(false);
+        (0, pagedApi_1.pages)('market-api/v1/assets', controller.signal).then(rows => {
+            if (!controller.signal.aborted)
+                setCatalog((0, assets_1.normaliseAssets)(rows).filter(row => row.metric === 'close').map(row => row.id));
+        }).catch(() => { if (!controller.signal.aborted)
+            setCatalogError(true); }).finally(() => { if (!controller.signal.aborted)
+            setCatalogLoading(false); });
+        return () => controller.abort();
+    }, [benchmarkEditor, catalogRetry]);
+    const toggleBenchmark = (name) => update(s => ({ ...s, benchmarks: s.benchmarks.includes(name) ? s.benchmarks.filter(id => id !== name) : [...s.benchmarks, name] }));
     const widgets = (0, react_1.useMemo)(() => (0, widgets_1.sanitizeDashboardWidgets)(state.widgets), [state.widgets]);
+    const market = (0, useRealtimeMarket_1.useRealtimeMarket)(widgets.includes('realtime-watchlist') || widgets.includes('intraday'), widgets.includes('intraday'));
     const [editing, setEditing] = (0, react_1.useState)(false);
     const [resetOpen, setResetOpen] = (0, react_1.useState)(false);
     const [revision, setRevision] = (0, react_1.useState)(0);
@@ -1635,7 +2255,6 @@ function Overview() {
     };
     const addWidget = (id) => { setWidgets(current => (0, widgets_1.addDashboardWidget)(current, id)); notify('已添加卡片'); };
     const removeWidget = (id) => { setWidgets(current => (0, widgets_1.removeDashboardWidget)(current, id)); notify('已移除卡片，可重新添加', 'info'); };
-    const shiftWidget = (id, direction) => setWidgets(current => (0, widgets_1.shiftDashboardWidget)(current, id, direction));
     const dropWidget = (source, target) => setWidgets(current => (0, widgets_1.moveDashboardWidget)(current, source, target));
     (0, react_1.useEffect)(() => {
         const controller = new AbortController();
@@ -1643,7 +2262,7 @@ function Overview() {
         setHistory([]);
         setDocuments([]);
         setErrors([]);
-        const requests = (wantQuotes ? benchmarks.length : 0) + Number(wantHistory) + Number(wantDocuments);
+        const requests = (wantQuotes ? quoteNames.length : 0) + Number(wantHistory) + Number(wantDocuments);
         setPending(requests);
         const complete = () => { if (!controller.signal.aborted)
             setPending(value => Math.max(0, value - 1)); };
@@ -1661,10 +2280,10 @@ function Overview() {
                 throw new Error('行情日期无效');
             start.setUTCDate(start.getUTCDate() - 90);
             const rows = await (0, pagedApi_1.pages)('market-api/v1/market/daily-return', controller.signal, { asset_id: name, dataset: 'main', from: start.toISOString().slice(0, 10), to: end });
-            return rows.filter(validPrice).sort((a, b) => a.business_date.localeCompare(b.business_date));
+            return (0, quotes_1.normaliseQuoteRows)(rows.filter(validPrice));
         }
         if (wantQuotes)
-            for (const name of benchmarks) {
+            for (const name of quoteNames) {
                 loadQuote(name).then(rows => { if (!controller.signal.aborted)
                     setQuotes(previous => ({ ...previous, [name]: rows })); }).catch(() => fail(name)).finally(complete);
             }
@@ -1690,10 +2309,10 @@ function Overview() {
                     setDocuments(body.items.filter(row => row.record_id && row.title));
             }).catch(() => fail('资讯研报')).finally(complete);
         return () => controller.abort();
-    }, [revision, wantQuotes, wantHistory, wantDocuments]);
+    }, [revision, wantQuotes, wantHistory, wantDocuments, quoteNames]);
     const available = benchmarks.filter(name => quotes[name]?.length);
     const chart = (0, react_1.useMemo)(() => {
-        const comparable = available.map((name, index) => ({ name, color: charts_1.CHART_COLORS[index % charts_1.CHART_COLORS.length], byDay: new Map(quotes[name].map(row => [row.business_date, Number(row.value)])) }));
+        const comparable = widgets_2.DEFAULT_BENCHMARKS.filter(name => quotes[name]?.length).map((name, index) => ({ name, color: charts_1.CHART_COLORS[index % charts_1.CHART_COLORS.length], byDay: new Map(quotes[name].map(row => [row.business_date, Number(row.value)])) }));
         const allDays = comparable.length ? [...comparable[0].byDay.keys()].filter(day => comparable.every(series => series.byDay.has(day))).sort() : [];
         const end = allDays.at(-1);
         const start = end ? new Date(end + 'T00:00:00Z') : undefined;
@@ -1709,11 +2328,103 @@ function Overview() {
     const exportReport = () => (0, files_1.downloadFile)('FinTech-市场快照.json', JSON.stringify({ ...(available.length ? { quotes: Object.fromEntries(available.map(name => [name, quotes[name].at(-1)])) } : {}), ...(latest ? { replay: latest } : {}), ...(documents.length ? { documents } : {}) }, null, 2), 'application/json');
     const timestamp = available.map(name => quotes[name].at(-1).business_date).sort().at(-1);
     const cardVisible = {
-        benchmarks: available.length > 0, performance: chart.series.length > 0, regime: !!latest,
-        documents: documents.length > 0, shortcuts: true, tools: true,
+        monitoring: true, benchmarks: true, performance: chart.series.length > 0, regime: !!latest,
+        documents: documents.length > 0, shortcuts: true, tools: true, 'realtime-watchlist': true, intraday: true,
     };
     const visible = widgets.filter(id => cardVisible[id]);
-    const frameProps = (id) => ({ id, editing, position: widgets.indexOf(id), count: widgets.length, onRemove: removeWidget, onMove: shiftWidget, onDropWidget: dropWidget });
+    const spanOf = (id) => id === 'benchmarks' ? (0, widgets_2.benchmarkSpan)(available.length) : widgets_1.DASHBOARD_WIDGETS.find(w => w.id === id).span;
+    const sections = (0, widgets_1.dashboardColumns)(visible, spanOf);
+    const frameProps = (id) => {
+        const peers = spanOf(id) === 'full' ? visible : visible.filter(other => spanOf(other) === spanOf(id));
+        return { id, editing, position: peers.indexOf(id), count: peers.length, onRemove: removeWidget,
+            onMove: (source, direction) => { const target = peers[peers.indexOf(source) + direction]; if (target)
+                dropWidget(source, target); }, onDropWidget: dropWidget };
+    };
+    const renderWidget = (id) => {
+        if (!cardVisible[id])
+            return null;
+        switch (id) {
+            case 'monitoring': return react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id), action: react_1.default.createElement(Monitoring_1.MonitorWidgetActions, null) },
+                react_1.default.createElement(Monitoring_1.MonitorWidget, null));
+            case 'realtime-watchlist': return react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id), action: react_1.default.createElement(RealtimeWidgets_1.AddWatchlist, { market: market }) },
+                react_1.default.createElement(RealtimeWidgets_1.RealtimeWatchlist, { market: market }));
+            case 'intraday': return react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id) },
+                react_1.default.createElement(RealtimeWidgets_1.IntradayWidget, { market: market }));
+            case 'benchmarks': return react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id), span: (0, widgets_2.benchmarkSpan)(available.length), action: react_1.default.createElement(react_1.default.Fragment, null,
+                    timestamp && react_1.default.createElement("time", { className: "dashboard-asof", dateTime: timestamp }, timestamp),
+                    react_1.default.createElement(ui_1.IconButton, { icon: "plus", label: "\u7F16\u8F91\u6307\u6570\u884C\u60C5", onClick: () => setBenchmarkEditor(true) })) },
+                react_1.default.createElement("div", { className: "benchmark-strip", style: { '--benchmark-columns': Math.max(1, Math.min(available.length, 6)) } }, available.map(name => {
+                    const rows = quotes[name], last = rows.at(-1), change = (0, widgets_2.closeReturn)(rows);
+                    const hasChange = change !== null;
+                    return react_1.default.createElement("a", { className: `benchmark ${hasChange ? change > 0 ? 'benchmark-up' : change < 0 ? 'benchmark-down' : '' : ''}`, title: last.business_date, href: `#/data?tab=history&asset=${encodeURIComponent(name)}`, key: name },
+                        react_1.default.createElement("div", { className: "benchmark-summary" },
+                            react_1.default.createElement("strong", { className: "benchmark-point" }, (0, format_1.numberZh)(last.value)),
+                            react_1.default.createElement("div", { className: "benchmark-caption" },
+                                react_1.default.createElement("span", null, name),
+                                react_1.default.createElement("b", { title: "\u76F8\u5BF9\u4E0A\u4E00\u4EA4\u6613\u65E5\u6536\u76D8\u4EF7" }, hasChange ? (0, format_1.signedPercent)(change) : '—'))),
+                        rows.length > 1 && react_1.default.createElement("div", { className: "benchmark-mini", "aria-label": name + '区间走势' },
+                            react_1.default.createElement(charts_1.Sparkline, { values: rows.map(row => Number(row.value)), positive: hasChange ? change >= 0 : Number(last.value) >= Number(rows[0].value), height: 34 })));
+                })));
+            case 'performance': return react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id), action: react_1.default.createElement("div", { className: "segments", "aria-label": "\u8D70\u52BF\u533A\u95F4" }, [{ value: 30, label: '1个月' }, { value: 90, label: '3个月' }].map(p => react_1.default.createElement("button", { key: p.value, type: "button", className: period === p.value ? 'active' : '', "aria-pressed": period === p.value, onClick: () => setPeriod(p.value) }, p.label))) },
+                react_1.default.createElement("div", { className: "card-inner" },
+                    react_1.default.createElement("div", { className: "dashboard-chart-title" },
+                        react_1.default.createElement(ui_1.Info, { label: "\u5E02\u573A\u8868\u73B0\u8BA1\u7B97\u53E3\u5F84" }, "\u4EE5\u533A\u95F4\u9996\u4E2A\u5171\u540C\u4EA4\u6613\u65E5\u4E3A\u57FA\u51C6\uFF0C\u6BD4\u8F83\u5404\u8D44\u4EA7\u7684\u7D2F\u8BA1\u6536\u76CA\u7387\u3002"),
+                        react_1.default.createElement("div", { className: "chart-legend" }, chart.series.map(series => react_1.default.createElement("span", { key: series.name },
+                            react_1.default.createElement("i", { style: { background: series.color } }),
+                            series.name)))),
+                    react_1.default.createElement(charts_1.TimeChart, { labels: chart.days, series: chart.series, height: 232 })));
+            case 'regime': return latest && react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id), action: react_1.default.createElement(ui_1.Info, { label: "\u5E02\u573A\u72B6\u6001\u6765\u6E90" },
+                    "\u6700\u8FD1\u4E00\u6B21\u5DF2\u5B8C\u6210\u56DE\u653E\u7684\u6A21\u578B\u8F93\u51FA\uFF0C",
+                    latest.business_date,
+                    "\u3002") },
+                react_1.default.createElement("div", { className: "card-inner dashboard-state" },
+                    react_1.default.createElement("time", { dateTime: latest.business_date }, latest.business_date),
+                    react_1.default.createElement("h2", { className: "current-state" }, latest.state_name),
+                    hasProbability && react_1.default.createElement("div", { className: "state-confidence" },
+                        react_1.default.createElement("span", null, "\u72B6\u6001\u5F52\u5C5E\u6982\u7387"),
+                        react_1.default.createElement("strong", null,
+                            (probability * 100).toFixed(1),
+                            react_1.default.createElement("small", null, "%")),
+                        react_1.default.createElement("div", { className: "probability-track" },
+                            react_1.default.createElement("i", { style: { width: `${Math.max(0, Math.min(100, probability * 100))}%` } }))),
+                    react_1.default.createElement("div", { className: "state-timeline", "aria-label": "\u5386\u53F2\u72B6\u6001\u53D8\u5316" }, history.map((row, index) => react_1.default.createElement("span", { key: `${row.business_date}-${index}`, title: `${row.business_date} · ${row.state_name}`, style: { background: charts_1.CHART_COLORS[row.state_id % charts_1.CHART_COLORS.length] } }))),
+                    react_1.default.createElement("a", { className: "text-link", href: "#/regimes" },
+                        "\u67E5\u770B\u56DE\u653E",
+                        react_1.default.createElement(Icon_1.Icon, { name: "arrow", size: 16 }))));
+            case 'documents': return react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id), action: react_1.default.createElement("a", { className: "dashboard-inline-link", href: "#/data?tab=news" },
+                    "\u5168\u90E8\u8D44\u8BAF",
+                    react_1.default.createElement(Icon_1.Icon, { name: "arrow", size: 14 })) },
+                react_1.default.createElement("div", { className: "dashboard-news" }, documents.map(doc => react_1.default.createElement("button", { type: "button", key: doc.record_id, className: "dashboard-news-row", onClick: () => setSelectedDocument(doc.record_id) },
+                    react_1.default.createElement("span", { className: "dashboard-news-title" }, doc.title),
+                    react_1.default.createElement("span", { className: "dashboard-news-meta" },
+                        model_1.OVERVIEW_DOCUMENT_TYPE_LABELS[doc.metric] || doc.metric,
+                        !!doc.date_known && react_1.default.createElement("time", { dateTime: doc.business_date }, doc.business_date))))));
+            case 'shortcuts': return react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id) },
+                react_1.default.createElement("nav", { className: "dashboard-quick-links", "aria-label": "\u5E02\u573A\u5FEB\u6377\u5165\u53E3" }, navigation_1.MARKET_SHORTCUTS.map(link => react_1.default.createElement("a", { key: link.title, href: link.href },
+                    react_1.default.createElement("span", { className: `shortcut-icon shortcut-${link.color}` },
+                        react_1.default.createElement(Icon_1.Icon, { name: link.icon, size: 17 })),
+                    react_1.default.createElement("span", null, link.title),
+                    react_1.default.createElement(Icon_1.Icon, { name: "chevron", size: 14 })))));
+            case 'tools': return react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id) },
+                react_1.default.createElement("nav", { className: "dashboard-tools", "aria-label": "\u7814\u7A76\u548C\u6570\u636E\u5DE5\u5177" },
+                    react_1.default.createElement("a", { href: "#/features" },
+                        react_1.default.createElement(Icon_1.Icon, { name: "activity", size: 17 }),
+                        "\u5E02\u573A\u7814\u7A76"),
+                    react_1.default.createElement("a", { href: "#/regimes" },
+                        react_1.default.createElement(Icon_1.Icon, { name: "play", size: 17 }),
+                        "\u5386\u53F2\u56DE\u653E"),
+                    react_1.default.createElement("a", { href: "#/quality" },
+                        react_1.default.createElement(Icon_1.Icon, { name: "database", size: 17 }),
+                        "\u6570\u636E\u7BA1\u7406"),
+                    react_1.default.createElement("a", { href: "#/lineage" },
+                        react_1.default.createElement(Icon_1.Icon, { name: "branch", size: 17 }),
+                        "\u6570\u636E\u6EAF\u6E90"),
+                    react_1.default.createElement("a", { href: "#/api" },
+                        react_1.default.createElement(Icon_1.Icon, { name: "code", size: 17 }),
+                        "API \u8BBF\u95EE")));
+            default: return null;
+        }
+    };
     return react_1.default.createElement(react_1.default.Fragment, null,
         react_1.default.createElement("div", { className: "overview-heading dashboard-heading" },
             react_1.default.createElement(ui_1.PageHead, { title: "\u5E02\u573A\u603B\u89C8" }),
@@ -1738,91 +2449,25 @@ function Overview() {
             react_1.default.createElement("span", null, hasData ? '部分数据暂时无法加载' : '数据暂时无法加载'),
             react_1.default.createElement(ui_1.Info, { label: "\u67E5\u770B\u672A\u52A0\u8F7D\u7684\u6570\u636E" }, Array.from(new Set(errors)).join('、')),
             react_1.default.createElement(ui_1.Button, { variant: "ghost", icon: "refresh", onClick: () => setRevision(value => value + 1), busy: pending > 0 }, "\u91CD\u8BD5")),
-        react_1.default.createElement("div", { className: "dashboard-grid", "aria-label": "\u6211\u7684\u5E02\u573A\u770B\u677F" }, widgets.map(id => {
-            if (!cardVisible[id])
-                return null;
-            switch (id) {
-                case 'benchmarks': return react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id), action: timestamp && react_1.default.createElement("time", { className: "dashboard-asof", dateTime: timestamp }, timestamp) },
-                    react_1.default.createElement("div", { className: "benchmark-strip" }, available.map(name => {
-                        const rows = quotes[name], last = rows.at(-1);
-                        const hasChange = typeof last.daily_return === 'number' && Number.isFinite(last.daily_return);
-                        return react_1.default.createElement("a", { className: "benchmark", href: `#/data?tab=history&asset=${encodeURIComponent(name)}`, key: name },
-                            react_1.default.createElement("span", { className: "benchmark-name" },
-                                name,
-                                react_1.default.createElement(Icon_1.Icon, { name: "chevron", size: 14 })),
-                            react_1.default.createElement("div", { className: "benchmark-value" },
-                                react_1.default.createElement("strong", null, (0, format_1.numberZh)(last.value)),
-                                rows.length > 1 && react_1.default.createElement(charts_1.Sparkline, { values: rows.map(row => Number(row.value)), positive: hasChange ? last.daily_return >= 0 : Number(last.value) >= Number(rows[0].value) })),
-                            react_1.default.createElement("div", { className: "benchmark-meta" },
-                                hasChange && react_1.default.createElement("span", { className: last.daily_return > 0 ? 'positive' : last.daily_return < 0 ? 'negative' : '' }, (0, format_1.signedPercent)(last.daily_return)),
-                                react_1.default.createElement("time", { dateTime: last.business_date }, last.business_date)));
-                    })));
-                case 'performance': return react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id), action: react_1.default.createElement("div", { className: "segments", "aria-label": "\u8D70\u52BF\u533A\u95F4" }, [{ value: 30, label: '1个月' }, { value: 90, label: '3个月' }].map(p => react_1.default.createElement("button", { key: p.value, type: "button", className: period === p.value ? 'active' : '', "aria-pressed": period === p.value, onClick: () => setPeriod(p.value) }, p.label))) },
-                    react_1.default.createElement("div", { className: "card-inner" },
-                        react_1.default.createElement("div", { className: "dashboard-chart-title" },
-                            react_1.default.createElement(ui_1.Info, { label: "\u5E02\u573A\u8868\u73B0\u8BA1\u7B97\u53E3\u5F84" }, "\u4EE5\u533A\u95F4\u9996\u4E2A\u5171\u540C\u4EA4\u6613\u65E5\u4E3A\u57FA\u51C6\uFF0C\u6BD4\u8F83\u5404\u8D44\u4EA7\u7684\u7D2F\u8BA1\u6536\u76CA\u7387\u3002"),
-                            react_1.default.createElement("div", { className: "chart-legend" }, chart.series.map(series => react_1.default.createElement("span", { key: series.name },
-                                react_1.default.createElement("i", { style: { background: series.color } }),
-                                series.name)))),
-                        react_1.default.createElement(charts_1.TimeChart, { labels: chart.days, series: chart.series, height: 232 })));
-                case 'regime': return latest && react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id), action: react_1.default.createElement(ui_1.Info, { label: "\u5E02\u573A\u72B6\u6001\u6765\u6E90" },
-                        "\u6700\u8FD1\u4E00\u6B21\u5DF2\u5B8C\u6210\u56DE\u653E\u7684\u6A21\u578B\u8F93\u51FA\uFF0C",
-                        latest.business_date,
-                        "\u3002") },
-                    react_1.default.createElement("div", { className: "card-inner dashboard-state" },
-                        react_1.default.createElement("time", { dateTime: latest.business_date }, latest.business_date),
-                        react_1.default.createElement("h2", { className: "current-state" }, latest.state_name),
-                        hasProbability && react_1.default.createElement("div", { className: "state-confidence" },
-                            react_1.default.createElement("span", null, "\u72B6\u6001\u5F52\u5C5E\u6982\u7387"),
-                            react_1.default.createElement("strong", null,
-                                (probability * 100).toFixed(1),
-                                react_1.default.createElement("small", null, "%")),
-                            react_1.default.createElement("div", { className: "probability-track" },
-                                react_1.default.createElement("i", { style: { width: `${Math.max(0, Math.min(100, probability * 100))}%` } }))),
-                        react_1.default.createElement("div", { className: "state-timeline", "aria-label": "\u5386\u53F2\u72B6\u6001\u53D8\u5316" }, history.map((row, index) => react_1.default.createElement("span", { key: `${row.business_date}-${index}`, title: `${row.business_date} · ${row.state_name}`, style: { background: charts_1.CHART_COLORS[row.state_id % charts_1.CHART_COLORS.length] } }))),
-                        react_1.default.createElement("a", { className: "text-link", href: "#/regimes" },
-                            "\u67E5\u770B\u56DE\u653E",
-                            react_1.default.createElement(Icon_1.Icon, { name: "arrow", size: 16 }))));
-                case 'documents': return react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id), action: react_1.default.createElement("a", { className: "dashboard-inline-link", href: "#/data?tab=news" },
-                        "\u5168\u90E8\u8D44\u8BAF",
-                        react_1.default.createElement(Icon_1.Icon, { name: "arrow", size: 14 })) },
-                    react_1.default.createElement("div", { className: "dashboard-news" }, documents.map(doc => react_1.default.createElement("button", { type: "button", key: doc.record_id, className: "dashboard-news-row", onClick: () => setSelectedDocument(doc.record_id) },
-                        react_1.default.createElement("span", { className: "dashboard-news-title" }, doc.title),
-                        react_1.default.createElement("span", { className: "dashboard-news-meta" },
-                            model_1.OVERVIEW_DOCUMENT_TYPE_LABELS[doc.metric] || doc.metric,
-                            !!doc.date_known && react_1.default.createElement("time", { dateTime: doc.business_date }, doc.business_date))))));
-                case 'shortcuts': return react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id) },
-                    react_1.default.createElement("nav", { className: "dashboard-quick-links", "aria-label": "\u5E02\u573A\u5FEB\u6377\u5165\u53E3" }, navigation_1.MARKET_SHORTCUTS.map(link => react_1.default.createElement("a", { key: link.title, href: link.href },
-                        react_1.default.createElement("span", { className: `shortcut-icon shortcut-${link.color}` },
-                            react_1.default.createElement(Icon_1.Icon, { name: link.icon, size: 17 })),
-                        react_1.default.createElement("span", null, link.title),
-                        react_1.default.createElement(Icon_1.Icon, { name: "chevron", size: 14 })))));
-                case 'tools': return react_1.default.createElement(DashboardWidget_1.DashboardWidget, { key: id, ...frameProps(id) },
-                    react_1.default.createElement("nav", { className: "dashboard-tools", "aria-label": "\u7814\u7A76\u548C\u6570\u636E\u5DE5\u5177" },
-                        react_1.default.createElement("a", { href: "#/features" },
-                            react_1.default.createElement(Icon_1.Icon, { name: "activity", size: 17 }),
-                            "\u5E02\u573A\u7814\u7A76"),
-                        react_1.default.createElement("a", { href: "#/regimes" },
-                            react_1.default.createElement(Icon_1.Icon, { name: "play", size: 17 }),
-                            "\u5386\u53F2\u56DE\u653E"),
-                        react_1.default.createElement("a", { href: "#/quality" },
-                            react_1.default.createElement(Icon_1.Icon, { name: "database", size: 17 }),
-                            "\u6570\u636E\u7BA1\u7406"),
-                        react_1.default.createElement("a", { href: "#/lineage" },
-                            react_1.default.createElement(Icon_1.Icon, { name: "branch", size: 17 }),
-                            "\u6570\u636E\u6EAF\u6E90"),
-                        react_1.default.createElement("a", { href: "#/api" },
-                            react_1.default.createElement(Icon_1.Icon, { name: "code", size: 17 }),
-                            "API \u8BBF\u95EE")));
-                default: return null;
-            }
-        })),
+        react_1.default.createElement("div", { className: "dashboard-grid", "aria-label": "\u6211\u7684\u5E02\u573A\u770B\u677F" }, sections.map((section, index) => section.full ? renderWidget(section.full) : react_1.default.createElement("div", { className: "dashboard-column-group", key: index },
+            react_1.default.createElement("div", { className: "dashboard-column dashboard-primary", "aria-label": "\u5BBD\u5361\u7247" }, section.wide.map(renderWidget)),
+            react_1.default.createElement("div", { className: "dashboard-column dashboard-secondary", "aria-label": "\u7A84\u5361\u7247" }, section.narrow.map(renderWidget))))),
         pending === 0 && visible.length === 0 && react_1.default.createElement("div", { className: "dashboard-empty" },
             react_1.default.createElement(Icon_1.Icon, { name: "grid", size: 22 }),
             react_1.default.createElement("strong", null, widgets.length ? '当前没有可展示的数据' : '看板尚未添加卡片'),
             react_1.default.createElement("button", { type: "button", onClick: () => setEditing(true) },
                 "\u7BA1\u7406\u5361\u7247",
                 react_1.default.createElement(Icon_1.Icon, { name: "arrow", size: 14 }))),
+        benchmarkEditor && react_1.default.createElement(ui_1.Modal, { title: "\u7F16\u8F91\u6307\u6570\u884C\u60C5", onClose: () => setBenchmarkEditor(false), footer: react_1.default.createElement(ui_1.Button, { variant: "primary", onClick: () => setBenchmarkEditor(false) }, "\u5B8C\u6210") },
+            react_1.default.createElement("input", { "aria-label": "\u641C\u7D22\u6307\u6570", placeholder: "\u641C\u7D22\u540D\u79F0", value: query, onChange: event => setQuery(event.target.value) }),
+            catalogLoading && react_1.default.createElement("p", { role: "status" }, "\u6B63\u5728\u52A0\u8F7D\u2026"),
+            catalogError && react_1.default.createElement("p", { role: "alert" },
+                "\u76EE\u5F55\u52A0\u8F7D\u5931\u8D25 ",
+                react_1.default.createElement(ui_1.Button, { onClick: () => setCatalogRetry(value => value + 1) }, "\u91CD\u8BD5")),
+            react_1.default.createElement("div", { className: "benchmark-picker" }, [...new Set([...benchmarks, ...catalog])].filter(name => name.toLowerCase().includes(query.trim().toLowerCase())).map(name => react_1.default.createElement("button", { type: "button", key: name, "aria-pressed": benchmarks.includes(name), onClick: () => toggleBenchmark(name) },
+                react_1.default.createElement("span", null, name),
+                react_1.default.createElement(Icon_1.Icon, { name: benchmarks.includes(name) ? 'close' : 'plus', size: 16 }),
+                react_1.default.createElement("span", null, benchmarks.includes(name) ? '删除' : '添加'))))),
         resetOpen && react_1.default.createElement(ui_1.Modal, { title: "\u6062\u590D\u9ED8\u8BA4\u770B\u677F\uFF1F", onClose: () => setResetOpen(false), footer: react_1.default.createElement(react_1.default.Fragment, null,
                 react_1.default.createElement(ui_1.Button, { onClick: () => setResetOpen(false) }, "\u53D6\u6D88"),
                 react_1.default.createElement(ui_1.Button, { variant: "primary", onClick: () => { setWidgets(() => [...widgets_1.DEFAULT_DASHBOARD_WIDGETS]); setResetOpen(false); notify('已恢复默认卡片布局'); } }, "\u6062\u590D\u9ED8\u8BA4")) },
@@ -2543,220 +3188,6 @@ function Settings() {
 }
 
 },
-"src/state/defaultState.ts":function(module,exports,require){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.initialState = initialState;
-const widgets_1 = require("../features/dashboard/widgets");
-function initialState() {
-    return { schema: 1, sessionUserId: null, users: [], annotations: [], rules: [], alerts: [], features: [], sources: [], issues: [], watchlist: [], widgets: [...widgets_1.DEFAULT_DASHBOARD_WIDGETS], prefs: { positiveGreen: false, compact: false, notifications: true, live: false }, imports: [], checkpoints: [], audit: [], modelVersion: '', apiLimit: 60 };
-}
-
-},
-"src/config/navigation.ts":function(module,exports,require){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.SEARCH_DESTINATIONS = exports.MARKET_SHORTCUTS = exports.NAV = exports.ROUTES = void 0;
-exports.ROUTES = ['overview', 'data', 'features', 'regimes', 'alerts', 'quality', 'lineage', 'system', 'api', 'settings'];
-exports.NAV = [
-    { route: 'overview', name: '市场总览', icon: 'grid', group: 'market' },
-    { route: 'data', name: '行情中心', icon: 'chart', group: 'market' },
-    { route: 'features', name: '市场研究', icon: 'activity', group: 'market' },
-    { route: 'regimes', name: '市场回放', icon: 'play', group: 'market' },
-    { route: 'quality', name: '数据管理', icon: 'database', group: 'tools' },
-    { route: 'lineage', name: '数据溯源', icon: 'branch', group: 'tools' },
-    { route: 'api', name: 'API 访问', icon: 'code', group: 'tools' },
-    { route: 'settings', name: '显示设置', icon: 'settings', group: 'tools' },
-];
-exports.MARKET_SHORTCUTS = [
-    { title: '历史行情', icon: 'chart', href: '#/data?tab=history', color: 'orange' },
-    { title: '宏观指标', icon: 'globe', href: '#/data?tab=macro', color: 'olive' },
-    { title: '经济日历', icon: 'calendar', href: '#/data?tab=calendar', color: 'gold' },
-    { title: '资讯研报', icon: 'book', href: '#/data?tab=news', color: 'plum' },
-];
-exports.SEARCH_DESTINATIONS = [
-    ...exports.NAV.map(item => ({ name: item.name, icon: item.icon, href: `#/${item.route}` })),
-    ...exports.MARKET_SHORTCUTS.filter(item => item.href !== '#/data?tab=history').map(item => ({ name: item.title, icon: item.icon, href: item.href })),
-];
-
-},
-"src/lib/storage.ts":function(module,exports,require){
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.STORAGE_KEY = void 0;
-exports.readState = readState;
-exports.writeState = writeState;
-const defaultState_1 = require("../state/defaultState");
-const widgets_1 = require("../features/dashboard/widgets");
-// Presentation preferences are deliberately separate from the retired demo workspace.
-// Never rehydrate market data, accounts, permissions, alerts or model outputs from it.
-exports.STORAGE_KEY = 'fintech.preferences.v2';
-const LEGACY_KEY = 'regimelab.workspace.v1';
-function readState() {
-    const base = (0, defaultState_1.initialState)();
-    try {
-        const raw = localStorage.getItem(exports.STORAGE_KEY) ?? localStorage.getItem(LEGACY_KEY);
-        if (!raw)
-            return base;
-        const saved = JSON.parse(raw);
-        if (!saved || typeof saved !== 'object')
-            return base;
-        for (const key of ['positiveGreen', 'compact']) {
-            if (typeof saved.prefs?.[key] === 'boolean')
-                base.prefs[key] = saved.prefs[key];
-        }
-        // Versions before dashboardVersion did not render their stored demo widget IDs.
-        // Ignore them rather than converting retired demo panels into live market panels.
-        if (saved.dashboardVersion === 1)
-            base.widgets = (0, widgets_1.sanitizeDashboardWidgets)(saved.widgets);
-        // Old watchlist IDs identify synthetic assets, so only read the new key's entries.
-        if (localStorage.getItem(exports.STORAGE_KEY) && Array.isArray(saved.watchlist))
-            base.watchlist = [...new Set(saved.watchlist.filter((id) => typeof id === 'string'))];
-    }
-    catch { /* Unavailable or invalid browser storage must not prevent reading the market. */ }
-    return base;
-}
-function writeState(state) {
-    try {
-        localStorage.setItem(exports.STORAGE_KEY, JSON.stringify({ schema: 2, dashboardVersion: 1, prefs: { positiveGreen: state.prefs.positiveGreen, compact: state.prefs.compact }, widgets: state.widgets, watchlist: state.watchlist }));
-        return true;
-    }
-    catch {
-        return false;
-    }
-}
-
-},
-"src/components/Icon.tsx":function(module,exports,require){
-"use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.Icon = Icon;
-exports.Brand = Brand;
-const react_1 = __importDefault(require("react"));
-const paths = {
-    menu: react_1.default.createElement("path", { d: "M4 6h16M4 12h16M4 18h16" }),
-    grid: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("rect", { x: "3", y: "3", width: "7", height: "7", rx: "1.5" }),
-        react_1.default.createElement("rect", { x: "14", y: "3", width: "7", height: "7", rx: "1.5" }),
-        react_1.default.createElement("rect", { x: "3", y: "14", width: "7", height: "7", rx: "1.5" }),
-        react_1.default.createElement("rect", { x: "14", y: "14", width: "7", height: "7", rx: "1.5" })),
-    database: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("ellipse", { cx: "12", cy: "5", rx: "8", ry: "3" }),
-        react_1.default.createElement("path", { d: "M4 5v7c0 4 16 4 16 0V5M4 12v7c0 4 16 4 16 0v-7" })),
-    chart: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M4 3v17h17M7 14l4-5 4 3 6-8" })),
-    spark: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "m12 3 2.4 6.6L21 12l-6.6 2.4L12 21l-2.4-6.6L3 12l6.6-2.4L12 3Z" })),
-    activity: react_1.default.createElement("path", { d: "M2 12h5l3-8 4 16 3-8h5" }),
-    bell: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" })),
-    shield: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z" }),
-        react_1.default.createElement("path", { d: "m8 12 3 3 5-6" })),
-    branch: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("rect", { x: "8", y: "2", width: "8", height: "6", rx: "1" }),
-        react_1.default.createElement("rect", { x: "2", y: "16", width: "7", height: "6", rx: "1" }),
-        react_1.default.createElement("rect", { x: "15", y: "16", width: "7", height: "6", rx: "1" }),
-        react_1.default.createElement("path", { d: "M12 8v4H5v4m7-4h7v4" })),
-    server: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("rect", { x: "3", y: "3", width: "18", height: "7", rx: "2" }),
-        react_1.default.createElement("rect", { x: "3", y: "14", width: "18", height: "7", rx: "2" }),
-        react_1.default.createElement("path", { d: "M7 6.5h.01M7 17.5h.01M12 6.5h5M12 17.5h5" })),
-    code: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18" })),
-    settings: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M4 7h16M4 17h16" }),
-        react_1.default.createElement("circle", { cx: "9", cy: "7", r: "3", fill: "currentColor", stroke: "none" }),
-        react_1.default.createElement("circle", { cx: "15", cy: "17", r: "3", fill: "currentColor", stroke: "none" })),
-    search: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("circle", { cx: "10.5", cy: "10.5", r: "7" }),
-        react_1.default.createElement("path", { d: "m16 16 5 5" })),
-    arrow: react_1.default.createElement("path", { d: "M5 12h14m-6-6 6 6-6 6" }), chevron: react_1.default.createElement("path", { d: "m9 5 7 7-7 7" }), down: react_1.default.createElement("path", { d: "m6 9 6 6 6-6" }),
-    close: react_1.default.createElement("path", { d: "m6 6 12 12M6 18 18 6" }), plus: react_1.default.createElement("path", { d: "M12 5v14M5 12h14" }), minus: react_1.default.createElement("path", { d: "M5 12h14" }),
-    refresh: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M20 7v5h-5M4 17v-5h5" }),
-        react_1.default.createElement("path", { d: "M5 8a8 8 0 0 1 13-3l2 3M4 16l2 3a8 8 0 0 0 13-3" })),
-    download: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" })),
-    upload: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5" })),
-    calendar: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("rect", { x: "3", y: "5", width: "18", height: "16", rx: "2" }),
-        react_1.default.createElement("path", { d: "M7 2v6M17 2v6M3 11h18" })),
-    filter: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M3 5h18l-7 8v7l-4-2v-5L3 5Z" })),
-    check: react_1.default.createElement("path", { d: "m5 12 4 4L19 6" }), more: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("circle", { cx: "5", cy: "12", r: "1" }),
-        react_1.default.createElement("circle", { cx: "12", cy: "12", r: "1" }),
-        react_1.default.createElement("circle", { cx: "19", cy: "12", r: "1" })),
-    external: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M13 3h8v8m-12 4L21 3M10 3H4v17h17v-6" })),
-    star: react_1.default.createElement("path", { d: "m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z" }),
-    play: react_1.default.createElement("path", { d: "m8 4 12 8-12 8V4Z" }), pause: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M8 4v16M16 4v16" })),
-    stop: react_1.default.createElement("rect", { x: "6", y: "6", width: "12", height: "12", rx: "1" }),
-    rewind: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "m15 5-7 7 7 7M4 5v14" })), next: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "m8 5 7 7-7 7M19 5v14" })),
-    info: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("circle", { cx: "12", cy: "12", r: "9" }),
-        react_1.default.createElement("path", { d: "M12 11v6M12 7h.01" })),
-    warning: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "m12 3 10 18H2L12 3Z" }),
-        react_1.default.createElement("path", { d: "M12 9v5M12 17h.01" })),
-    clock: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("circle", { cx: "12", cy: "12", r: "9" }),
-        react_1.default.createElement("path", { d: "M12 6v6l4 2" })),
-    file: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M14 2H5v20h14V7l-5-5Z" }),
-        react_1.default.createElement("path", { d: "M14 2v6h5M8 12h8M8 16h6" })),
-    edit: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "m15 4 5 5-11 11H4v-5L15 4Zm-2 2 5 5" })),
-    trash: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M9 10v7M15 10v7" })),
-    user: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("circle", { cx: "12", cy: "8", r: "4" }),
-        react_1.default.createElement("path", { d: "M4 22v-3c0-7 16-7 16 0v3" })),
-    users: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("circle", { cx: "9", cy: "8", r: "3" }),
-        react_1.default.createElement("path", { d: "M3 21v-4c0-5 12-5 12 0v4M16 4a3 3 0 0 1 0 6M18 14c3 0 3 3 3 7" })),
-    logout: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M10 3H4v18h6M9 12h12m-5-5 5 5-5 5" })),
-    grip: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M8 5h.01M8 12h.01M8 19h.01M16 5h.01M16 12h.01M16 19h.01", strokeWidth: "4" })),
-    lock: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("rect", { x: "5", y: "10", width: "14", height: "11", rx: "2" }),
-        react_1.default.createElement("path", { d: "M8 10V6a4 4 0 0 1 8 0v4M12 14v3" })),
-    globe: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("circle", { cx: "12", cy: "12", r: "9" }),
-        react_1.default.createElement("ellipse", { cx: "12", cy: "12", rx: "4", ry: "9" }),
-        react_1.default.createElement("path", { d: "M3 12h18" })),
-    book: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M12 5C8 2 4 3 2 4v16c4-2 7-1 10 1 3-2 6-3 10-1V4c-3-2-7-2-10 1Zm0 0v16" })),
-    copy: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("rect", { x: "8", y: "8", width: "13", height: "13", rx: "2" }),
-        react_1.default.createElement("path", { d: "M16 8V3H3v13h5" })),
-    wifi: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "M2 8a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8 16a5 5 0 0 1 8 0" }),
-        react_1.default.createElement("circle", { cx: "12", cy: "20", r: "1" })),
-    layers: react_1.default.createElement(react_1.default.Fragment, null,
-        react_1.default.createElement("path", { d: "m12 2 10 6-10 6L2 8l10-6ZM2 12l10 6 10-6M2 16l10 6 10-6" })),
-    arrowup: react_1.default.createElement("path", { d: "M12 20V4m-6 6 6-6 6 6" }), arrowdown: react_1.default.createElement("path", { d: "M12 4v16m-6-6 6 6 6-6" }),
-};
-function Icon({ name, size = 18, className = '', ...rest }) {
-    return react_1.default.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.65", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", className: className, ...rest }, paths[name] || paths.grid);
-}
-function Brand({ large = false }) { return react_1.default.createElement("div", { className: `brand ${large ? 'brand-large' : ''}` },
-    react_1.default.createElement("div", { className: "brand-symbol" },
-        react_1.default.createElement("svg", { viewBox: "0 0 32 32", fill: "none" },
-            react_1.default.createElement("path", { d: "M7 24V15M13 24V8M19 24V12M25 24V5", stroke: "currentColor", strokeWidth: "2.8", strokeLinecap: "round" }))),
-    react_1.default.createElement("div", null,
-        react_1.default.createElement("strong", null, "FinTech"))); }
-
-},
 "src/components/ui.tsx":function(module,exports,require){
 "use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
@@ -2936,6 +3367,326 @@ function SearchBox({ value, onChange, placeholder = '搜索…', inputRef }) { r
         react_1.default.createElement(Icon_1.Icon, { name: "close", size: 14 }))); }
 function ProgressBar({ value, color = 'var(--accent)' }) { return react_1.default.createElement("div", { className: "progress" },
     react_1.default.createElement("span", { style: { width: `${Math.max(0, Math.min(100, value))}%`, background: color } })); }
+
+},
+"src/services/realtimeMarket.ts":function(module,exports,require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MarketHttpError = exports.issueText = exports.instrumentName = exports.names = void 0;
+exports.validWatch = validWatch;
+exports.priceFields = priceFields;
+exports.marketRequest = marketRequest;
+exports.validSequence = validSequence;
+exports.validateIntraday = validateIntraday;
+exports.matchInstrumentCode = matchInstrumentCode;
+exports.rememberInstruments = rememberInstruments;
+exports.watchlistReturn = watchlistReturn;
+function validWatch(value) {
+    return Array.isArray(value) ? [...new Set(value.filter((v) => typeof v === 'string' && /^[A-Z0-9:_./-]{1,80}$/.test(v)))].slice(0, 100) : [];
+}
+function priceFields(q) {
+    return [['成交', q.last_price], ['指数', q.index_value], ['参考汇率', q.indicative_rate], ['买价', q.bid_price], ['卖价', q.ask_price]]
+        .filter((v) => v[1]?.value != null).map(([label, price]) => ({ label, price }));
+}
+exports.names = { 'EQUITY:XSHG:600519': '贵州茅台', 'EQUITY:XSHE:000001': '平安银行', 'EQUITY:XHKG:00700': '腾讯控股', 'ETF:XSHG:510300': '沪深300 ETF', 'INDEX:XSHG:000001': '上证指数', 'EQUITY:US:AAPL': 'Apple', 'EQUITY:US:MSFT': 'Microsoft', 'ETF:US:SPY': 'SPDR S&P 500 ETF', 'INDEX:US:SP500': '标普500', 'FX:SPOT:USD:CNH': '美元 / 离岸人民币', 'FX:SPOT:EUR:USD': '欧元 / 美元' };
+const instrumentName = (id) => exports.names[id] || id;
+exports.instrumentName = instrumentName;
+const issueText = (code) => ({ UNSUPPORTED: '暂不支持', NOT_CONFIGURED: '来源未配置', DISABLED: '来源未启用', UNVERIFIED: '来源尚未验证', PENDING: '等待请求预算 / 验证', CAPACITY_EXCEEDED: '订阅容量已满', NO_DATA: '来源暂无数据', PARSE_FAILED: '来源解析失败', UPSTREAM_UNAVAILABLE: '来源暂不可用', RATE_LIMITED: '来源限流', ACCESS_DENIED: '来源拒绝访问', STALE: '验证过期', FRESH: '已验证', UNKNOWN: '状态未知', MARKET_CLOSED: '市场休市' }[code] || code);
+exports.issueText = issueText;
+class MarketHttpError extends Error {
+    status;
+    constructor(status) {
+        super(status === 401 ? '行情服务鉴权失败，请检查服务端配置' : status === 503 ? '行情服务未启用' : status === 429 ? '连接请求过多，请稍后重试' : `行情请求失败（${status}）`);
+        this.status = status;
+    }
+}
+exports.MarketHttpError = MarketHttpError;
+async function marketRequest(path, signal, method = 'GET') {
+    const response = await fetch('/market-api/v1/market/realtime/' + path, { method, signal, cache: 'no-store', redirect: 'error' });
+    if (!response.ok)
+        throw new MarketHttpError(response.status);
+    const body = await response.json();
+    if (path === 'ws-ticket' && (typeof body?.ticket !== 'string' || !/^[A-Za-z0-9_-]{20,200}$/.test(body.ticket)))
+        throw new Error('行情票据格式无效');
+    if (path === 'instruments' && (!Array.isArray(body?.items) || body.items.some((i) => !i || typeof i.instrument_id !== 'string' || !Array.isArray(i.capabilities))))
+        throw new Error('资产目录格式无效');
+    if (path.startsWith('search?') && (typeof body?.status !== 'string' || !Array.isArray(body.items) || body.items.some((i) => !i || typeof i.instrument_id !== 'string' || typeof i.name !== 'string' || !['EQUITY', 'ETF', 'INDEX'].includes(i.asset_type) || typeof i.venue !== 'string')))
+        throw new Error('证券搜索结果格式无效');
+    if (path.startsWith('intraday?'))
+        validateIntraday(body);
+    return body;
+}
+function validSequence(previous, message) {
+    if (typeof message.connection_id !== 'string' || !Number.isSafeInteger(message.sequence))
+        return false;
+    return previous ? message.connection_id === previous.id && message.sequence === previous.sequence + 1 : message.type === 'hello' && message.sequence === 1;
+}
+function validateIntraday(value) {
+    if (!value || typeof value.status !== 'string')
+        throw new Error('分时行情格式无效');
+    const data = value.data;
+    if (!data) {
+        if (value.status === 'OK')
+            throw new Error('分时行情缺少数据');
+        return;
+    }
+    if (typeof data.instrument_id !== 'string' || typeof data.currency !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(data.trading_date) || !Array.isArray(data.points) || !data.points.length)
+        throw new Error('分时行情格式无效');
+    new Intl.DateTimeFormat('zh-CN', { timeZone: data.timezone });
+    let previous = -Infinity;
+    for (const point of data.points) {
+        const time = Date.parse(point.time);
+        if (!Number.isFinite(time) || time <= previous || typeof point.price !== 'string' || !/^\d+(?:\.\d+)?$/.test(point.price) || !Number.isFinite(Number(point.price)) || Number(point.price) <= 0)
+            throw new Error('分时价格或时间无效');
+        previous = time;
+    }
+}
+function matchInstrumentCode(input, catalog) {
+    const code = input.trim().toUpperCase();
+    if (!code)
+        return [];
+    return catalog.filter(i => {
+        const parts = i.instrument_id.split(':');
+        if (i.asset_type === 'FX')
+            return [i.instrument_id, parts.slice(-2).join('/'), parts.slice(-2).join('')].includes(code);
+        const local = parts.at(-1);
+        const market = { XSHG: 'SH', XSHE: 'SZ', XHKG: 'HK', US: 'US' }[i.venue];
+        return [i.instrument_id, local, ...(market ? [market + local, market + ':' + local, local + '.' + market] : [])].includes(code);
+    });
+}
+function rememberInstruments(items) {
+    for (const item of items)
+        if (item.name)
+            exports.names[item.instrument_id] = item.name;
+    return items;
+}
+function watchlistReturn(q, result) {
+    const data = result?.data, price = q?.last_price || q?.index_value;
+    if (!q || !data || !price?.value || !price.source_time || result?.error || !['FRESH', 'MARKET_CLOSED'].includes(result?.freshness || '') || data.instrument_id !== q.instrument_id || data.currency !== q.currency)
+        return null;
+    const close = Number(data.previous_close), current = Number(price.value), time = new Date(price.source_time);
+    if (!data.previous_close || !Number.isFinite(close) || close <= 0 || !Number.isFinite(current) || !Number.isFinite(time.getTime()))
+        return null;
+    const date = new Intl.DateTimeFormat('en-CA', { timeZone: data.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(time);
+    return date === data.trading_date ? current / close - 1 : null;
+}
+
+},
+"src/components/Icon.tsx":function(module,exports,require){
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Icon = Icon;
+exports.Brand = Brand;
+const react_1 = __importDefault(require("react"));
+const paths = {
+    menu: react_1.default.createElement("path", { d: "M4 6h16M4 12h16M4 18h16" }),
+    grid: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("rect", { x: "3", y: "3", width: "7", height: "7", rx: "1.5" }),
+        react_1.default.createElement("rect", { x: "14", y: "3", width: "7", height: "7", rx: "1.5" }),
+        react_1.default.createElement("rect", { x: "3", y: "14", width: "7", height: "7", rx: "1.5" }),
+        react_1.default.createElement("rect", { x: "14", y: "14", width: "7", height: "7", rx: "1.5" })),
+    database: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("ellipse", { cx: "12", cy: "5", rx: "8", ry: "3" }),
+        react_1.default.createElement("path", { d: "M4 5v7c0 4 16 4 16 0V5M4 12v7c0 4 16 4 16 0v-7" })),
+    chart: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M4 3v17h17M7 14l4-5 4 3 6-8" })),
+    spark: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "m12 3 2.4 6.6L21 12l-6.6 2.4L12 21l-2.4-6.6L3 12l6.6-2.4L12 3Z" })),
+    activity: react_1.default.createElement("path", { d: "M2 12h5l3-8 4 16 3-8h5" }),
+    bell: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" })),
+    shield: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6l8-3Z" }),
+        react_1.default.createElement("path", { d: "m8 12 3 3 5-6" })),
+    branch: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("rect", { x: "8", y: "2", width: "8", height: "6", rx: "1" }),
+        react_1.default.createElement("rect", { x: "2", y: "16", width: "7", height: "6", rx: "1" }),
+        react_1.default.createElement("rect", { x: "15", y: "16", width: "7", height: "6", rx: "1" }),
+        react_1.default.createElement("path", { d: "M12 8v4H5v4m7-4h7v4" })),
+    server: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("rect", { x: "3", y: "3", width: "18", height: "7", rx: "2" }),
+        react_1.default.createElement("rect", { x: "3", y: "14", width: "18", height: "7", rx: "2" }),
+        react_1.default.createElement("path", { d: "M7 6.5h.01M7 17.5h.01M12 6.5h5M12 17.5h5" })),
+    code: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "m8 6-6 6 6 6m8-12 6 6-6 6M14 3l-4 18" })),
+    settings: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M4 7h16M4 17h16" }),
+        react_1.default.createElement("circle", { cx: "9", cy: "7", r: "3", fill: "currentColor", stroke: "none" }),
+        react_1.default.createElement("circle", { cx: "15", cy: "17", r: "3", fill: "currentColor", stroke: "none" })),
+    search: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("circle", { cx: "10.5", cy: "10.5", r: "7" }),
+        react_1.default.createElement("path", { d: "m16 16 5 5" })),
+    arrow: react_1.default.createElement("path", { d: "M5 12h14m-6-6 6 6-6 6" }), chevron: react_1.default.createElement("path", { d: "m9 5 7 7-7 7" }), down: react_1.default.createElement("path", { d: "m6 9 6 6 6-6" }),
+    close: react_1.default.createElement("path", { d: "m6 6 12 12M6 18 18 6" }), plus: react_1.default.createElement("path", { d: "M12 5v14M5 12h14" }), minus: react_1.default.createElement("path", { d: "M5 12h14" }),
+    refresh: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M20 7v5h-5M4 17v-5h5" }),
+        react_1.default.createElement("path", { d: "M5 8a8 8 0 0 1 13-3l2 3M4 16l2 3a8 8 0 0 0 13-3" })),
+    download: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5" })),
+    upload: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M12 16V3m-5 5 5-5 5 5M4 16v5h16v-5" })),
+    calendar: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("rect", { x: "3", y: "5", width: "18", height: "16", rx: "2" }),
+        react_1.default.createElement("path", { d: "M7 2v6M17 2v6M3 11h18" })),
+    filter: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M3 5h18l-7 8v7l-4-2v-5L3 5Z" })),
+    check: react_1.default.createElement("path", { d: "m5 12 4 4L19 6" }), more: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("circle", { cx: "5", cy: "12", r: "1" }),
+        react_1.default.createElement("circle", { cx: "12", cy: "12", r: "1" }),
+        react_1.default.createElement("circle", { cx: "19", cy: "12", r: "1" })),
+    external: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M13 3h8v8m-12 4L21 3M10 3H4v17h17v-6" })),
+    star: react_1.default.createElement("path", { d: "m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z" }),
+    play: react_1.default.createElement("path", { d: "m8 4 12 8-12 8V4Z" }), pause: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M8 4v16M16 4v16" })),
+    stop: react_1.default.createElement("rect", { x: "6", y: "6", width: "12", height: "12", rx: "1" }),
+    rewind: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "m15 5-7 7 7 7M4 5v14" })), next: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "m8 5 7 7-7 7M19 5v14" })),
+    info: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("circle", { cx: "12", cy: "12", r: "9" }),
+        react_1.default.createElement("path", { d: "M12 11v6M12 7h.01" })),
+    warning: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "m12 3 10 18H2L12 3Z" }),
+        react_1.default.createElement("path", { d: "M12 9v5M12 17h.01" })),
+    clock: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("circle", { cx: "12", cy: "12", r: "9" }),
+        react_1.default.createElement("path", { d: "M12 6v6l4 2" })),
+    file: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M14 2H5v20h14V7l-5-5Z" }),
+        react_1.default.createElement("path", { d: "M14 2v6h5M8 12h8M8 16h6" })),
+    edit: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "m15 4 5 5-11 11H4v-5L15 4Zm-2 2 5 5" })),
+    trash: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M3 6h18M9 6V3h6v3M5 6l1 15h12l1-15M9 10v7M15 10v7" })),
+    user: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("circle", { cx: "12", cy: "8", r: "4" }),
+        react_1.default.createElement("path", { d: "M4 22v-3c0-7 16-7 16 0v3" })),
+    users: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("circle", { cx: "9", cy: "8", r: "3" }),
+        react_1.default.createElement("path", { d: "M3 21v-4c0-5 12-5 12 0v4M16 4a3 3 0 0 1 0 6M18 14c3 0 3 3 3 7" })),
+    logout: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M10 3H4v18h6M9 12h12m-5-5 5 5-5 5" })),
+    grip: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M8 5h.01M8 12h.01M8 19h.01M16 5h.01M16 12h.01M16 19h.01", strokeWidth: "4" })),
+    lock: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("rect", { x: "5", y: "10", width: "14", height: "11", rx: "2" }),
+        react_1.default.createElement("path", { d: "M8 10V6a4 4 0 0 1 8 0v4M12 14v3" })),
+    globe: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("circle", { cx: "12", cy: "12", r: "9" }),
+        react_1.default.createElement("ellipse", { cx: "12", cy: "12", rx: "4", ry: "9" }),
+        react_1.default.createElement("path", { d: "M3 12h18" })),
+    book: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M12 5C8 2 4 3 2 4v16c4-2 7-1 10 1 3-2 6-3 10-1V4c-3-2-7-2-10 1Zm0 0v16" })),
+    copy: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("rect", { x: "8", y: "8", width: "13", height: "13", rx: "2" }),
+        react_1.default.createElement("path", { d: "M16 8V3H3v13h5" })),
+    wifi: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "M2 8a15 15 0 0 1 20 0M5 12a10 10 0 0 1 14 0M8 16a5 5 0 0 1 8 0" }),
+        react_1.default.createElement("circle", { cx: "12", cy: "20", r: "1" })),
+    layers: react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("path", { d: "m12 2 10 6-10 6L2 8l10-6ZM2 12l10 6 10-6M2 16l10 6 10-6" })),
+    arrowup: react_1.default.createElement("path", { d: "M12 20V4m-6 6 6-6 6 6" }), arrowdown: react_1.default.createElement("path", { d: "M12 4v16m-6-6 6 6 6-6" }),
+};
+function Icon({ name, size = 18, className = '', ...rest }) {
+    return react_1.default.createElement("svg", { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.65", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", className: className, ...rest }, paths[name] || paths.grid);
+}
+function Brand({ large = false }) { return react_1.default.createElement("div", { className: `brand ${large ? 'brand-large' : ''}` },
+    react_1.default.createElement("div", { className: "brand-symbol" },
+        react_1.default.createElement("svg", { viewBox: "0 0 32 32", fill: "none" },
+            react_1.default.createElement("path", { d: "M7 24V15M13 24V8M19 24V12M25 24V5", stroke: "currentColor", strokeWidth: "2.8", strokeLinecap: "round" }))),
+    react_1.default.createElement("div", null,
+        react_1.default.createElement("strong", null, "FinTech"))); }
+
+},
+"src/state/defaultState.ts":function(module,exports,require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.initialState = initialState;
+const widgets_1 = require("../features/dashboard/widgets");
+function initialState() {
+    return { schema: 1, sessionUserId: null, users: [], annotations: [], rules: [], alerts: [], features: [], sources: [], issues: [], watchlist: [], benchmarks: [...widgets_1.DEFAULT_BENCHMARKS], widgets: [...widgets_1.DEFAULT_DASHBOARD_WIDGETS], prefs: { positiveGreen: false, compact: false, notifications: true, live: false }, imports: [], checkpoints: [], audit: [], modelVersion: '', apiLimit: 60 };
+}
+
+},
+"src/config/navigation.ts":function(module,exports,require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.SEARCH_DESTINATIONS = exports.MARKET_SHORTCUTS = exports.NAV = exports.ROUTES = void 0;
+exports.ROUTES = ['monitoring', 'overview', 'data', 'features', 'regimes', 'alerts', 'quality', 'lineage', 'system', 'api', 'settings'];
+exports.NAV = [
+    { route: 'overview', name: '市场总览', icon: 'grid', group: 'market' },
+    { route: 'data', name: '行情中心', icon: 'chart', group: 'market' },
+    { route: 'features', name: '市场研究', icon: 'activity', group: 'market' },
+    { route: 'regimes', name: '市场回放', icon: 'play', group: 'market' },
+    { route: 'monitoring', name: '监控中心', icon: 'activity', group: 'tools' },
+    { route: 'quality', name: '数据管理', icon: 'database', group: 'tools' },
+    { route: 'lineage', name: '数据溯源', icon: 'branch', group: 'tools' },
+    { route: 'api', name: 'API 访问', icon: 'code', group: 'tools' },
+    { route: 'settings', name: '显示设置', icon: 'settings', group: 'tools' },
+];
+exports.MARKET_SHORTCUTS = [
+    { title: '历史行情', icon: 'chart', href: '#/data?tab=history', color: 'orange' },
+    { title: '宏观指标', icon: 'globe', href: '#/data?tab=macro', color: 'olive' },
+    { title: '经济日历', icon: 'calendar', href: '#/data?tab=calendar', color: 'gold' },
+    { title: '资讯研报', icon: 'book', href: '#/data?tab=news', color: 'plum' },
+];
+exports.SEARCH_DESTINATIONS = [
+    ...exports.NAV.map(item => ({ name: item.name, icon: item.icon, href: `#/${item.route}` })),
+    ...exports.MARKET_SHORTCUTS.filter(item => item.href !== '#/data?tab=history').map(item => ({ name: item.title, icon: item.icon, href: item.href })),
+];
+
+},
+"src/lib/storage.ts":function(module,exports,require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.STORAGE_KEY = void 0;
+exports.readState = readState;
+exports.writeState = writeState;
+const defaultState_1 = require("../state/defaultState");
+const widgets_1 = require("../features/dashboard/widgets");
+// Presentation preferences are deliberately separate from the retired demo workspace.
+// Never rehydrate market data, accounts, permissions, alerts or model outputs from it.
+exports.STORAGE_KEY = 'fintech.preferences.v2';
+const LEGACY_KEY = 'regimelab.workspace.v1';
+function readState() {
+    const base = (0, defaultState_1.initialState)();
+    try {
+        const raw = localStorage.getItem(exports.STORAGE_KEY) ?? localStorage.getItem(LEGACY_KEY);
+        if (!raw)
+            return base;
+        const saved = JSON.parse(raw);
+        if (!saved || typeof saved !== 'object')
+            return base;
+        for (const key of ['positiveGreen', 'compact']) {
+            if (typeof saved.prefs?.[key] === 'boolean')
+                base.prefs[key] = saved.prefs[key];
+        }
+        // Versions before dashboardVersion did not render their stored demo widget IDs.
+        // Ignore them rather than converting retired demo panels into live market panels.
+        if (saved.dashboardVersion === 1)
+            base.widgets = (0, widgets_1.sanitizeDashboardWidgets)(saved.widgets);
+        if (Array.isArray(saved.benchmarks))
+            base.benchmarks = [...new Set(saved.benchmarks.filter((id) => typeof id === 'string' && !!id.trim()))];
+        // Old watchlist IDs identify synthetic assets, so only read the new key's entries.
+        if (localStorage.getItem(exports.STORAGE_KEY) && Array.isArray(saved.watchlist))
+            base.watchlist = [...new Set(saved.watchlist.filter((id) => typeof id === 'string'))];
+    }
+    catch { /* Unavailable or invalid browser storage must not prevent reading the market. */ }
+    return base;
+}
+function writeState(state) {
+    try {
+        localStorage.setItem(exports.STORAGE_KEY, JSON.stringify({ schema: 2, dashboardVersion: 1, prefs: { positiveGreen: state.prefs.positiveGreen, compact: state.prefs.compact }, widgets: state.widgets, watchlist: state.watchlist, benchmarks: state.benchmarks }));
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
 
 },
 "src/services/pagedApi.ts":function(module,exports,require){
@@ -3584,6 +4335,476 @@ function chartStateFrom(value) {
 }
 
 },
+"src/state/useRealtimeMarket.ts":function(module,exports,require){
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.useRealtimeMarket = useRealtimeMarket;
+const react_1 = require("react");
+const realtimeMarket_1 = require("../services/realtimeMarket");
+const AppContext_1 = require("./AppContext");
+function useRealtimeMarket(active, showIntraday) {
+    const [revision, setRevision] = (0, react_1.useState)(0);
+    const retry = () => setRevision(value => value + 1);
+    const { state, update } = (0, AppContext_1.useApp)();
+    const watch = (0, react_1.useMemo)(() => (0, realtimeMarket_1.validWatch)(state.watchlist), [state.watchlist]);
+    const setWatch = (ids) => update(s => ({ ...s, watchlist: (0, realtimeMarket_1.validWatch)(ids) }));
+    const [selected, setSelected] = (0, react_1.useState)(watch[0] || '');
+    const [catalog, setCatalog] = (0, react_1.useState)([]), [quotes, setQuotes] = (0, react_1.useState)({});
+    const [errors, setErrors] = (0, react_1.useState)({}), [status, setStatus] = (0, react_1.useState)('未连接'), [failure, setFailure] = (0, react_1.useState)('');
+    const [intraday, setIntraday] = (0, react_1.useState)(null), [intradayError, setIntradayError] = (0, react_1.useState)('');
+    const socket = (0, react_1.useRef)(null), desired = (0, react_1.useRef)(watch), requestId = (0, react_1.useRef)(0), latestRequest = (0, react_1.useRef)('');
+    desired.current = watch;
+    const send = () => { if (socket.current?.readyState === WebSocket.OPEN) {
+        latestRequest.current = String(++requestId.current);
+        socket.current.send(JSON.stringify({ action: 'set_subscriptions', request_id: latestRequest.current, instrument_ids: desired.current }));
+    } };
+    (0, react_1.useEffect)(() => { if (!watch.includes(selected))
+        setSelected(watch[0] || ''); send(); }, [watch]);
+    (0, react_1.useEffect)(() => {
+        setQuotes({});
+        setErrors({});
+        setCatalog([]);
+        setFailure('');
+        if (!active) {
+            setStatus('未连接');
+            return;
+        }
+        const controller = new AbortController();
+        let stopped = false, timer, retry = 0, lastSeen = Date.now(), sequence = null;
+        let pendingRetry;
+        const connect = async () => {
+            setStatus(retry ? '正在重连' : '正在连接');
+            try {
+                const instruments = await (0, realtimeMarket_1.marketRequest)('instruments', controller.signal);
+                for (const id of desired.current.filter(id => !instruments.items.some(i => i.instrument_id === id))) {
+                    const restored = await (0, realtimeMarket_1.marketRequest)('search?' + new URLSearchParams({ q: id }), controller.signal);
+                    if (restored.status === 'PENDING')
+                        throw new Error('正在恢复自选资产，等待来源请求预算');
+                    instruments.items.push(...restored.items);
+                }
+                const ticket = await (0, realtimeMarket_1.marketRequest)('ws-ticket', controller.signal, 'POST');
+                if (stopped)
+                    return;
+                setCatalog((0, realtimeMarket_1.rememberInstruments)(instruments.items));
+                const url = new URL('/market-ws/v1/market', location.href);
+                url.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+                url.searchParams.set('ticket', ticket.ticket);
+                const ws = new WebSocket(url);
+                socket.current = ws;
+                sequence = null;
+                lastSeen = Date.now();
+                ws.onmessage = event => {
+                    if (stopped)
+                        return;
+                    try {
+                        const m = JSON.parse(event.data);
+                        if (!(0, realtimeMarket_1.validSequence)(sequence, m)) {
+                            setFailure('消息序号中断，正在重新同步');
+                            ws.close();
+                            return;
+                        }
+                        sequence = { id: m.connection_id, sequence: m.sequence };
+                        lastSeen = Date.now();
+                        if (m.type === 'hello') {
+                            retry = 0;
+                            setStatus('已连接');
+                            setFailure('');
+                            send();
+                        }
+                        if (m.type === 'subscription_ack' && m.request_id === latestRequest.current) {
+                            const rejected = m.rejected;
+                            setErrors(Object.fromEntries(rejected.map(e => [e.instrument_id, e.code])));
+                            if (pendingRetry)
+                                clearTimeout(pendingRetry);
+                            if (rejected.some(e => ['PENDING', 'UNVERIFIED'].includes(e.code)))
+                                pendingRetry = setTimeout(send, 15000);
+                        }
+                        if ((m.type === 'snapshot' && m.request_id === latestRequest.current) || m.type === 'quote_update') {
+                            setQuotes(Object.fromEntries(m.items.filter(v => v.quote && desired.current.includes(v.quote.instrument_id)).map(v => [v.quote.instrument_id, v])));
+                        }
+                        if (m.type === 'error')
+                            setFailure('订阅请求被拒绝：' + m.code);
+                    }
+                    catch {
+                        setFailure('行情协议解析失败，正在重新连接');
+                        ws.close();
+                    }
+                };
+                ws.onclose = () => { if (stopped)
+                    return; socket.current = null; setStatus('连接中断'); timer = setTimeout(connect, Math.min(60000, 7000 * 2 ** retry++)); };
+                ws.onerror = () => ws.close();
+            }
+            catch (e) {
+                if (stopped)
+                    return;
+                setStatus('连接失败');
+                setFailure(e instanceof Error ? e.message : '行情连接失败');
+                if (!(e instanceof realtimeMarket_1.MarketHttpError && [401, 403, 503].includes(e.status)))
+                    timer = setTimeout(connect, Math.min(60000, 7000 * 2 ** retry++));
+            }
+        };
+        void connect();
+        const health = setInterval(() => { if (socket.current && Date.now() - lastSeen > 45000)
+            socket.current.close(); }, 5000);
+        return () => { stopped = true; controller.abort(); clearTimeout(timer); clearTimeout(pendingRetry); clearInterval(health); socket.current?.close(); socket.current = null; };
+    }, [active, revision]);
+    (0, react_1.useEffect)(() => {
+        setIntraday(null);
+        setIntradayError('');
+        if (!active || !showIntraday || !selected)
+            return;
+        const controller = new AbortController();
+        let timer;
+        const refresh = async () => {
+            try {
+                const result = await (0, realtimeMarket_1.marketRequest)('intraday?' + new URLSearchParams({ instrument_id: selected }), controller.signal);
+                if (controller.signal.aborted)
+                    return;
+                setIntraday(result);
+                setIntradayError('');
+                if (!['UNSUPPORTED', 'DISABLED'].includes(result.status))
+                    timer = setTimeout(refresh, result.status === 'PENDING' ? 5000 : 60000);
+            }
+            catch (e) {
+                if (!controller.signal.aborted) {
+                    setIntradayError(e instanceof Error ? e.message : '分时行情读取失败');
+                    if (!(e instanceof realtimeMarket_1.MarketHttpError && [401, 403, 503].includes(e.status)))
+                        timer = setTimeout(refresh, 30000);
+                }
+            }
+        };
+        void refresh();
+        return () => { controller.abort(); clearTimeout(timer); };
+    }, [active, showIntraday, selected, revision]);
+    return { connected: status === '已连接', retry, watch, setWatch, remember: (items) => setCatalog(current => [...new Map([...current, ...(0, realtimeMarket_1.rememberInstruments)(items)].map(i => [i.instrument_id, i])).values()]), selected, setSelected, catalog, quotes, errors, status, failure, intraday, intradayError };
+}
+
+},
+"src/components/RealtimeWidgets.tsx":function(module,exports,require){
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.AddWatchlist = AddWatchlist;
+exports.RealtimeWatchlist = RealtimeWatchlist;
+exports.IntradayWidget = IntradayWidget;
+const react_1 = __importStar(require("react"));
+const highstock_js_1 = __importDefault(require("highcharts/highstock.js"));
+const palette_1 = require("../styles/palette");
+const ui_1 = require("./ui");
+const realtimeMarket_1 = require("../services/realtimeMarket");
+const format_1 = require("../lib/format");
+const RequestStatus_1 = require("./RequestStatus");
+function AddWatchlist({ market }) {
+    const [open, setOpen] = (0, react_1.useState)(false), [code, setCode] = (0, react_1.useState)(''), [error, setError] = (0, react_1.useState)('');
+    const [found, setFound] = (0, react_1.useState)(null), [loading, setLoading] = (0, react_1.useState)(false), [adding, setAdding] = (0, react_1.useState)(false);
+    const local = (0, realtimeMarket_1.matchInstrumentCode)(code, market.catalog);
+    const matches = [...new Map([...local, ...(found?.items || [])].map(i => [i.instrument_id, i])).values()];
+    (0, react_1.useEffect)(() => {
+        setFound(null);
+        setError('');
+        if (!open || !code.trim()) {
+            setLoading(false);
+            return;
+        }
+        const controller = new AbortController();
+        let timer;
+        setLoading(true);
+        const search = async () => {
+            try {
+                const result = await (0, realtimeMarket_1.marketRequest)('search?' + new URLSearchParams({ q: code.trim() }), controller.signal);
+                if (controller.signal.aborted)
+                    return;
+                setFound(result);
+                market.remember(result.items);
+                if (result.status === 'PENDING') {
+                    timer = setTimeout(search, 5000);
+                    return;
+                }
+                if (result.status !== 'OK')
+                    setError((0, realtimeMarket_1.issueText)(result.status));
+            }
+            catch (e) {
+                if (!controller.signal.aborted)
+                    setError(e instanceof Error ? e.message : '搜索失败');
+            }
+            if (!controller.signal.aborted)
+                setLoading(false);
+        };
+        timer = setTimeout(search, 600);
+        return () => { controller.abort(); clearTimeout(timer); };
+    }, [open, code]);
+    const add = async (id) => {
+        if (market.watch.includes(id)) {
+            setError('已在自选列表中');
+            return;
+        }
+        if (market.watch.length >= 100) {
+            setError('自选列表最多添加 100 个资产');
+            return;
+        }
+        setAdding(true);
+        setError('');
+        try {
+            const result = await (0, realtimeMarket_1.marketRequest)('quotes?' + new URLSearchParams({ instrument_ids: id }), AbortSignal.timeout(12000));
+            if (!result.items.some(item => item.quote?.instrument_id === id)) {
+                setError((0, realtimeMarket_1.issueText)(result.errors[0]?.code || 'UNVERIFIED') + '，暂时无法添加');
+                return;
+            }
+            market.setWatch([...market.watch, id]);
+            market.setSelected(id);
+            setOpen(false);
+            setCode('');
+        }
+        catch (e) {
+            setError(e instanceof Error ? e.message : '报价验证失败');
+        }
+        finally {
+            setAdding(false);
+        }
+    };
+    const submit = () => { if (matches.length === 1)
+        void add(matches[0].instrument_id);
+    else
+        setError(matches.length ? '请选择具体市场的资产' : loading ? '正在搜索，请稍候' : '没有找到支持的证券'); };
+    return react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement(ui_1.IconButton, { icon: "plus", label: "\u6DFB\u52A0\u81EA\u9009", onClick: () => { setOpen(true); setError(''); } }),
+        open && react_1.default.createElement(ui_1.Modal, { title: "\u6DFB\u52A0\u81EA\u9009", onClose: () => { if (!adding) {
+                setOpen(false);
+                setCode('');
+            } }, footer: react_1.default.createElement(ui_1.Button, { variant: "primary", disabled: !code.trim() || adding, busy: adding, onClick: submit }, "\u6DFB\u52A0") },
+            react_1.default.createElement("form", { onSubmit: e => { e.preventDefault(); if (!adding)
+                    submit(); } },
+                react_1.default.createElement(ui_1.Field, { label: "\u4EE3\u7801\u6216\u540D\u79F0", error: error },
+                    react_1.default.createElement("input", { value: code, disabled: adding, onChange: e => setCode(e.target.value), placeholder: "\u4F8B\u5982 600036\u3001\u62DB\u5546\u94F6\u884C\u300100700", autoComplete: "off" }))),
+            loading && react_1.default.createElement("p", { role: "status" }, found?.status === 'PENDING' ? '等待来源请求预算…' : '正在搜索证券…'),
+            matches.length > 0 && react_1.default.createElement("div", { className: "realtime-code-matches" }, matches.map(i => react_1.default.createElement(ui_1.Button, { key: i.instrument_id, disabled: adding, onClick: () => void add(i.instrument_id) },
+                (0, realtimeMarket_1.instrumentName)(i.instrument_id),
+                " \u00B7 ",
+                i.venue,
+                " \u00B7 ",
+                i.asset_type))),
+            !loading && found?.status === 'OK' && !matches.length && react_1.default.createElement("p", null, "\u6CA1\u6709\u627E\u5230\u652F\u6301\u7684\u80A1\u7968\u3001ETF \u6216\u6307\u6570\u3002")));
+}
+function Status({ market }) {
+    if (market.status === '已连接' && !market.failure)
+        return null;
+    return react_1.default.createElement("p", { className: "small muted", role: "status" },
+        market.status,
+        market.failure ? ' · ' + market.failure : '',
+        market.status !== '已连接' && Object.keys(market.quotes).length ? '；下方报价不代表当前状态' : '',
+        market.status !== '已连接' && react_1.default.createElement(ui_1.Button, { variant: "ghost", onClick: market.retry }, "\u91CD\u8BD5\u8FDE\u63A5"));
+}
+function RealtimeWatchlist({ market }) {
+    const [previousCloses, setPreviousCloses] = (0, react_1.useState)({});
+    const [closeErrors, setCloseErrors] = (0, react_1.useState)({});
+    (0, react_1.useEffect)(() => {
+        const controller = new AbortController();
+        let timer;
+        setPreviousCloses({});
+        setCloseErrors({});
+        const refresh = async () => {
+            await Promise.all(market.watch.map(async (id) => {
+                try {
+                    const result = await (0, realtimeMarket_1.marketRequest)('intraday?' + new URLSearchParams({ instrument_id: id }), controller.signal);
+                    if (!controller.signal.aborted) {
+                        setPreviousCloses(current => ({ ...current, [id]: result }));
+                        setCloseErrors(current => ({ ...current, [id]: result.error || (result.data ? '' : (0, realtimeMarket_1.issueText)(result.status)) }));
+                    }
+                }
+                catch (error) {
+                    if (!controller.signal.aborted) {
+                        setPreviousCloses(current => { const next = { ...current }; delete next[id]; return next; });
+                        setCloseErrors(current => ({ ...current, [id]: error instanceof Error ? error.message : '昨收价读取失败' }));
+                    }
+                }
+            }));
+            if (!controller.signal.aborted)
+                timer = setTimeout(refresh, 60000);
+        };
+        void refresh();
+        return () => { controller.abort(); clearTimeout(timer); };
+    }, [market.watch, market.connected]);
+    const [venue, setVenue] = (0, react_1.useState)('ALL');
+    const [sort, setSort] = (0, react_1.useState)('NONE');
+    const venueOf = (id) => market.catalog.find(i => i.instrument_id === id)?.venue || id.split(':')[1];
+    const venues = [...new Set(market.watch.map(venueOf))];
+    const rows = market.watch.filter(id => venue === 'ALL' || !venues.includes(venue) || venueOf(id) === venue);
+    if (sort !== 'NONE')
+        rows.sort((a, b) => {
+            const av = market.quotes[a]?.quote, bv = market.quotes[b]?.quote;
+            const ap = av ? (0, realtimeMarket_1.priceFields)(av)[0]?.price.value : null, bp = bv ? (0, realtimeMarket_1.priceFields)(bv)[0]?.price.value : null;
+            if (ap == null)
+                return bp == null ? 0 : 1;
+            if (bp == null)
+                return -1;
+            return (Number(ap) - Number(bp)) * (sort === 'ASC' ? 1 : -1);
+        });
+    const venueName = (v) => ({ XSHG: '沪市', XSHE: '深市', XHKG: '港股', US: '美股', OTC: '外汇', SPOT: '外汇' }[v] || v);
+    return react_1.default.createElement("div", { className: "realtime-table-panel" },
+        react_1.default.createElement(Status, { market: market }),
+        react_1.default.createElement("div", { className: "realtime-table-scroll" },
+            react_1.default.createElement("table", { className: "realtime-table" },
+                react_1.default.createElement("thead", null,
+                    react_1.default.createElement("tr", null,
+                        react_1.default.createElement("th", { scope: "col" },
+                            react_1.default.createElement("select", { "aria-label": "\u81EA\u9009\u5E02\u573A", value: venues.includes(venue) ? venue : 'ALL', onChange: e => setVenue(e.target.value) },
+                                react_1.default.createElement("option", { value: "ALL" }, "\u5168\u90E8"),
+                                venues.map(v => react_1.default.createElement("option", { key: v, value: v }, venueName(v))))),
+                        react_1.default.createElement("th", { scope: "col", "aria-sort": sort === 'ASC' ? 'ascending' : sort === 'DESC' ? 'descending' : 'none' },
+                            react_1.default.createElement("button", { type: "button", onClick: () => setSort(sort === 'ASC' ? 'DESC' : 'ASC') },
+                                "\u5F53\u524D\u4EF7 ",
+                                react_1.default.createElement("span", { "aria-hidden": "true" }, sort === 'ASC' ? '↑' : sort === 'DESC' ? '↓' : '↕'))),
+                        react_1.default.createElement("th", { scope: "col" }, "\u6DA8\u8DCC\u5E45"),
+                        react_1.default.createElement("th", { scope: "col" }, "\u6210\u4EA4\u91CF"),
+                        react_1.default.createElement("th", { scope: "col" }, "\u603B\u5E02\u503C"),
+                        react_1.default.createElement("th", { scope: "col" }, "\u5E74\u521D\u81F3\u4ECA"),
+                        react_1.default.createElement("th", { scope: "col" },
+                            react_1.default.createElement(ui_1.Info, { label: "\u81EA\u9009\u6307\u6807\u8BF4\u660E" }, "\u6DA8\u8DCC\u5E45\u6309\u5F53\u524D\u6210\u4EA4\u4EF7\u6216\u6307\u6570\u503C\u76F8\u5BF9\u4E0A\u4E00\u4EA4\u6613\u65E5\u6536\u76D8\u4EF7\u8BA1\u7B97\uFF1B\u7F3A\u5C11\u6709\u6548\u6628\u6536\u4EF7\u6216\u4EA4\u6613\u65E5\u671F\u4E0D\u5339\u914D\u65F6\u663E\u793A \u2014\u3002\u6210\u4EA4\u91CF\u3001\u5E02\u503C\u53CA\u5E74\u521D\u81F3\u4ECA\u6536\u76CA\u5C1A\u672A\u63D0\u4F9B\u3002\u5916\u6C47\u53C2\u8003\u6C47\u7387\u4E0D\u662F\u53EF\u6210\u4EA4\u62A5\u4EF7\u3002")))),
+                react_1.default.createElement("tbody", null, rows.map(id => {
+                    const view = market.quotes[id], q = view?.quote, fields = q ? (0, realtimeMarket_1.priceFields)(q) : [];
+                    const v = venueOf(id), tag = { XSHG: 'SH', XSHE: 'SZ', XHKG: 'HK', US: 'US', OTC: 'FX', SPOT: 'FX' }[v] || v;
+                    const code = id.startsWith('FX:') ? id.split(':').slice(-2).join('/') : id.split(':').at(-1);
+                    const error = market.errors[id] || view?.error;
+                    const change = (0, realtimeMarket_1.watchlistReturn)(q, previousCloses[id]);
+                    return react_1.default.createElement("tr", { key: id, className: market.selected === id ? 'selected' : '' },
+                        react_1.default.createElement("th", { scope: "row" },
+                            react_1.default.createElement("button", { type: "button", className: "realtime-asset", "aria-pressed": market.selected === id, onClick: () => market.setSelected(id) },
+                                react_1.default.createElement("strong", null, (0, realtimeMarket_1.instrumentName)(id)),
+                                react_1.default.createElement("span", null,
+                                    react_1.default.createElement("b", { className: 'realtime-market-tag tag-' + tag }, tag),
+                                    " ",
+                                    code))),
+                        react_1.default.createElement("td", { className: "realtime-current" },
+                            fields.length ? fields.map(({ label, price }) => react_1.default.createElement("div", { key: label },
+                                react_1.default.createElement("strong", null, price.value),
+                                label !== '成交' && react_1.default.createElement("small", null, label))) : react_1.default.createElement("span", { className: "muted" }, "\u2014"),
+                            error && react_1.default.createElement("small", { className: "realtime-row-error" }, (0, realtimeMarket_1.issueText)(error))),
+                        react_1.default.createElement("td", { className: change === null ? 'muted' : change > 0 ? 'realtime-change-up' : change < 0 ? 'realtime-change-down' : 'muted', title: change === null ? (closeErrors[id] || '缺少同一交易日的报价或有效昨收价') : '昨收 ' + previousCloses[id]?.data?.previous_close }, change === null ? '—' : (0, format_1.signedPercent)(change)),
+                        react_1.default.createElement("td", { className: "muted" }, "\u2014"),
+                        react_1.default.createElement("td", { className: "muted" }, "\u2014"),
+                        react_1.default.createElement("td", { className: "muted" }, "\u2014"),
+                        react_1.default.createElement("td", null,
+                            react_1.default.createElement("div", { className: "realtime-row-actions" },
+                                react_1.default.createElement(ui_1.Info, { label: (0, realtimeMarket_1.instrumentName)(id) + '报价详情' }, view ? react_1.default.createElement(react_1.default.Fragment, null,
+                                    q.provider,
+                                    " \u00B7 ",
+                                    q.feed,
+                                    " \u00B7 ",
+                                    (0, realtimeMarket_1.issueText)(view.freshness),
+                                    react_1.default.createElement("br", null),
+                                    fields.map(({ label, price }) => react_1.default.createElement("span", { key: label },
+                                        label,
+                                        "\u6765\u6E90\u65F6\u95F4\uFF1A",
+                                        price.source_time ? new Date(price.source_time).toLocaleString('zh-CN') : '未知',
+                                        react_1.default.createElement("br", null))),
+                                    "\u6765\u6E90\u72B6\u6001\uFF1A",
+                                    view.source_health,
+                                    react_1.default.createElement("br", null),
+                                    "\u6570\u636E\u7B49\u7EA7\uFF1A",
+                                    q.data_tier,
+                                    "\uFF1B\u5EF6\u8FDF\uFF1A",
+                                    q.delay_seconds === null ? '未知' : q.delay_seconds + ' 秒',
+                                    "\uFF1B\u5E02\u573A\u72B6\u6001\uFF1A",
+                                    q.market_status) : '等待报价'),
+                                react_1.default.createElement(ui_1.IconButton, { icon: "close", label: '移除' + (0, realtimeMarket_1.instrumentName)(id), onClick: () => market.setWatch(market.watch.filter(item => item !== id)) }))));
+                })))),
+        !market.watch.length && react_1.default.createElement("p", { className: "realtime-empty" }, "\u70B9\u51FB\u53F3\u4E0A\u89D2 \uFF0B \u6DFB\u52A0\u81EA\u9009\u3002"));
+}
+function MinuteChart({ data }) {
+    const host = (0, react_1.useRef)(null);
+    const [point, setPoint] = (0, react_1.useState)(data.points.at(-1));
+    (0, react_1.useEffect)(() => {
+        setPoint(data.points.at(-1));
+        if (!host.current)
+            return;
+        const chart = highstock_js_1.default.chart(host.current, {
+            chart: { height: 300, animation: false }, title: { text: undefined }, credits: { enabled: false }, legend: { enabled: false },
+            time: { timezone: data.timezone }, xAxis: { type: 'datetime', dateTimeLabelFormats: { hour: '%H:%M', minute: '%H:%M' } },
+            yAxis: { title: { text: data.currency }, plotLines: data.previous_close ? [{ value: Number(data.previous_close), color: '#89949d', width: 1, dashStyle: 'Dash', label: { text: '昨收 ' + data.previous_close } }] : [] },
+            tooltip: { xDateFormat: '%Y-%m-%d %H:%M', valueSuffix: ' ' + data.currency },
+            plotOptions: { series: { animation: false } },
+            series: [{ type: 'line', name: data.price_kind === 'INDEX_VALUE' ? '指数值' : '分钟价格', data: data.points.map(p => [Date.parse(p.time), Number(p.price)]), color: palette_1.PRIMARY_SERIES_COLOR, lineWidth: 2, marker: { enabled: false }, point: { events: { click() { setPoint(data.points.find(p => Date.parse(p.time) === this.x)); } } } }],
+        });
+        return () => chart.destroy();
+    }, [data]);
+    return react_1.default.createElement(react_1.default.Fragment, null,
+        react_1.default.createElement("div", { ref: host, role: "img", "aria-label": `${(0, realtimeMarket_1.instrumentName)(data.instrument_id)} ${data.trading_date} 分时走势图` }),
+        react_1.default.createElement("label", { className: "field" },
+            "\u67E5\u770B\u5206\u949F\u6570\u636E",
+            react_1.default.createElement("select", { value: point?.time || '', onChange: e => setPoint(data.points.find(p => p.time === e.target.value)) }, data.points.map(p => react_1.default.createElement("option", { key: p.time, value: p.time },
+                new Date(p.time).toLocaleTimeString('zh-CN', { timeZone: data.timezone, hour: '2-digit', minute: '2-digit' }),
+                " \u00B7 ",
+                p.price,
+                " ",
+                data.currency)))));
+}
+function IntradayWidget({ market }) {
+    const result = market.intraday, data = result?.data;
+    const today = data ? new Intl.DateTimeFormat('en-CA', { timeZone: data.timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()) : '';
+    return react_1.default.createElement("div", { className: "card-inner" },
+        react_1.default.createElement("div", { className: "realtime-chart-toolbar" },
+            react_1.default.createElement("label", null,
+                "\u81EA\u9009\u8D44\u4EA7 ",
+                react_1.default.createElement("select", { value: market.selected, onChange: e => market.setSelected(e.target.value), "aria-label": "\u8D70\u52BF\u8D44\u4EA7" },
+                    !market.watch.length && react_1.default.createElement("option", { value: "" }, "\u8BF7\u5148\u6DFB\u52A0\u81EA\u9009"),
+                    market.watch.map(id => react_1.default.createElement("option", { key: id, value: id }, (0, realtimeMarket_1.instrumentName)(id))))),
+            react_1.default.createElement(Status, { market: market })),
+        react_1.default.createElement(RequestStatus_1.RetryNotice, { message: market.intradayError, onRetry: market.retry }),
+        data ? react_1.default.createElement(react_1.default.Fragment, null,
+            react_1.default.createElement("p", null,
+                react_1.default.createElement("strong", null,
+                    data.trading_date === today ? '今日' : '最近来源交易日',
+                    " \u00B7 ",
+                    data.trading_date),
+                " \u00B7 \u817E\u8BAF \u00B7 ",
+                data.timezone,
+                " \u00B7 ",
+                (0, realtimeMarket_1.issueText)(result.freshness || 'UNKNOWN')),
+            data.trading_date !== today && react_1.default.createElement(ui_1.Info, { label: "\u4EA4\u6613\u65E5\u671F\u8BF4\u660E" }, "\u4F11\u5E02\u6216\u6765\u6E90\u5C1A\u672A\u66F4\u65B0\u65F6\u663E\u793A\u6700\u8FD1\u6765\u6E90\u4EA4\u6613\u65E5\uFF0C\u4E0D\u5C06\u65E7\u6570\u636E\u6807\u4E3A\u4ECA\u65E5\u884C\u60C5\u3002"),
+            result.error && react_1.default.createElement("p", { role: "alert" },
+                (0, realtimeMarket_1.issueText)(result.error),
+                " \u00B7 \u4FDD\u7559\u6700\u540E\u6709\u6548\u66F2\u7EBF"),
+            react_1.default.createElement(MinuteChart, { data: data }),
+            react_1.default.createElement(ui_1.Info, { label: "\u5206\u65F6\u6570\u636E\u53E3\u5F84" }, "\u6765\u6E90\u5206\u949F\u4EF7\u683C\uFF0C\u975E\u9010\u7B14\u6210\u4EA4\uFF0C\u4E0D\u63D2\u503C\u8865\u70B9\u3002\u5206\u65F6\u4E0E\u5B9E\u65F6\u62A5\u4EF7\u7684\u6765\u6E90\u5206\u522B\u6807\u6CE8\u3002"))
+            : react_1.default.createElement("p", null, !market.selected ? '请在实时自选中添加资产。' : result ? (0, realtimeMarket_1.issueText)(result.status) + (result.status === 'UNSUPPORTED' ? '：当前分时接口仅支持目录中的 A 股、港股、ETF 和指数。' : '') : '正在读取分时数据…'));
+}
+
+},
 "src/features/dashboard/DashboardWidget.tsx":function(module,exports,require){
 "use strict";
 var __importDefault = (this && this.__importDefault) || function (mod) {
@@ -3595,9 +4816,9 @@ const react_1 = __importDefault(require("react"));
 const ui_1 = require("../../components/ui");
 const Icon_1 = require("../../components/Icon");
 const widgets_1 = require("./widgets");
-function DashboardWidget({ id, editing, position, count, onRemove, onMove, onDropWidget, action, children }) {
+function DashboardWidget({ id, editing, position, count, onRemove, onMove, onDropWidget, action, children, span }) {
     const definition = widgets_1.DASHBOARD_WIDGETS.find(item => item.id === id);
-    return react_1.default.createElement(ui_1.Card, { title: definition.title, className: `dashboard-widget dashboard-span-${definition.span} ${editing ? 'dashboard-editing' : ''}`, "data-widget-id": id, draggable: editing, onDragStart: event => { if (!editing)
+    return react_1.default.createElement(ui_1.Card, { title: definition.title, className: `dashboard-widget dashboard-span-${span || definition.span} ${editing ? 'dashboard-editing' : ''}`, "data-widget-id": id, draggable: editing, onDragStart: event => { if (!editing)
             return; event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', id); }, onDragOver: event => { if (editing) {
             event.preventDefault();
             event.dataTransfer.dropEffect = 'move';
@@ -3616,15 +4837,20 @@ function DashboardWidget({ id, editing, position, count, onRemove, onMove, onDro
 "src/features/dashboard/widgets.ts":function(module,exports,require){
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DEFAULT_DASHBOARD_WIDGETS = exports.DASHBOARD_WIDGETS = void 0;
+exports.benchmarkSpan = exports.DEFAULT_BENCHMARKS = exports.DEFAULT_DASHBOARD_WIDGETS = exports.DASHBOARD_WIDGETS = void 0;
 exports.sanitizeDashboardWidgets = sanitizeDashboardWidgets;
 exports.addDashboardWidget = addDashboardWidget;
 exports.removeDashboardWidget = removeDashboardWidget;
 exports.moveDashboardWidget = moveDashboardWidget;
 exports.shiftDashboardWidget = shiftDashboardWidget;
+exports.closeReturn = closeReturn;
+exports.dashboardColumns = dashboardColumns;
 /** Dashboard configuration contains presentation choices only, never financial records. */
 exports.DASHBOARD_WIDGETS = [
-    { id: 'benchmarks', title: '主要市场', icon: 'chart', span: 'full' },
+    { id: 'monitoring', title: '监控动态', icon: 'activity', span: 'narrow' },
+    { id: 'realtime-watchlist', title: '实时自选', icon: 'star', span: 'wide' },
+    { id: 'intraday', title: '当天走势', icon: 'activity', span: 'wide' },
+    { id: 'benchmarks', title: '指数行情', icon: 'chart', span: 'wide' },
     { id: 'performance', title: '市场表现', icon: 'activity', span: 'wide' },
     { id: 'regime', title: '沪深300 市场状态', icon: 'layers', span: 'narrow' },
     { id: 'documents', title: '最新资讯', icon: 'book', span: 'wide' },
@@ -3669,6 +4895,32 @@ function shiftDashboardWidget(current, widget, delta) {
     const reordered = [...list];
     [reordered[index], reordered[index + delta]] = [reordered[index + delta], reordered[index]];
     return reordered;
+}
+exports.DEFAULT_BENCHMARKS = ['沪深300', '标普500', 'COMEX黄金期货', '美元指数DXY'];
+const benchmarkSpan = (count) => count <= 2 ? 'narrow' : count <= 5 ? 'wide' : 'full';
+exports.benchmarkSpan = benchmarkSpan;
+function closeReturn(rows) {
+    const last = rows.at(-1), previous = rows.at(-2);
+    if (typeof last?.daily_return === 'number' && Number.isFinite(last.daily_return))
+        return last.daily_return;
+    if (!last || !previous || !Number.isFinite(Number(last.value)) || !Number.isFinite(Number(previous.value)) || Number(previous.value) === 0)
+        return null;
+    return Number(last.value) / Number(previous.value) - 1;
+}
+/** Full-width cards separate independently stacked wide/narrow columns. */
+function dashboardColumns(ids, span) {
+    const sections = [];
+    for (const id of ids) {
+        const size = span(id);
+        if (size === 'full') {
+            sections.push({ full: id, wide: [], narrow: [] });
+            continue;
+        }
+        if (!sections.length || sections.at(-1).full)
+            sections.push({ wide: [], narrow: [] });
+        sections.at(-1)[size].push(id);
+    }
+    return sections;
 }
 
 },
